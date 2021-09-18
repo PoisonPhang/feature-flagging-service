@@ -11,8 +11,6 @@ use crate::model::flag;
 /// Data object for products
 /// 
 pub struct Product {
-    /// Unique ID
-    pub id: usize,
     /// Product Name
     pub name: String,
     /// List of controlled features in the product

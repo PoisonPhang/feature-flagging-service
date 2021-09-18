@@ -7,8 +7,8 @@
 /// Data object for users
 /// 
 pub struct User {
-    /// Unique id
-    id: usize,
     /// User Name
-    name: String
+    name: String,
+    /// User email
+    email: String,
 }

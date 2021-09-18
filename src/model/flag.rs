@@ -10,8 +10,6 @@ use std::collections::HashMap;
 /// Data Object for a Feature Flag
 /// 
 pub struct FeatureFlag {
-    /// Unique ID
-    pub id: usize,
     /// Flag Name
     pub name: String,
     /// Global enabled status of the flag (trumps other statuses)
