@@ -4,11 +4,16 @@
 
 use std::collections::HashMap;
 
+use bson::oid::ObjectId;
+
+use serde::{Deserialize, Serialize};
+
 ///
 /// # FeatureFlag
 /// 
 /// Data Object for a Feature Flag
 /// 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
     /// Flag Name
     pub name: String,
@@ -20,17 +25,29 @@ pub struct FeatureFlag {
     pub release_type: ReleaseType,
 }
 
+impl FeatureFlag {
+    pub fn new(name: String, enabled: bool, client_toggle: bool, release_type: ReleaseType) -> FeatureFlag {
+        FeatureFlag {
+            name,
+            enabled,
+            client_toggle,
+            release_type,
+        }
+    }
+}
+
 ///
 /// # ReleaseType
 /// Data object for a Feature Flag Release Type
 /// 
 /// Release types contain relevant information to the type of release
 /// 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ReleaseType {
     /// Release is global, only controlled by the `FeatureFlag`s `enabled` property
     Global,
     /// Release is limited, limited to a specified list of `user_states`
-    Limited {user_states: HashMap<usize, bool>},
+    Limited {user_states: HashMap<ObjectId, bool>},
     /// Release is percentage, limited to a `percentage` of `user_states`
-    Percentage {percentage: f32, user_states: HashMap<usize, bool>},
+    Percentage {percentage: f32, user_states: HashMap<ObjectId, bool>},
 }
