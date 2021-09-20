@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 pub struct FeatureFlag {
     /// Flag Name
     pub name: String,
-    /// Global enabled status of the flag (trumps other statuses)
+    /// Global enabled status of the flag (false trumps other statuses)
     pub enabled: bool,
     /// If client toggles are enabled
     pub client_toggle: bool,
@@ -26,6 +26,14 @@ pub struct FeatureFlag {
 }
 
 impl FeatureFlag {
+    ///
+    /// # FeatureFlag::new()
+    /// Creates and returns a new `FeatureFlag` with the provided fields
+    /// 
+    /// ## Example
+    /// ```
+    /// let flag = FeatureFlag::new("example:flag_name".to_string(), true, false, ReleaseType::Global);
+    /// ```
     pub fn new(name: String, enabled: bool, client_toggle: bool, release_type: ReleaseType) -> FeatureFlag {
         FeatureFlag {
             name,
