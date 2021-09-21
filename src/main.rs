@@ -2,6 +2,20 @@
 //! Currently being used for testing
 //! 
 
+#![feature(proc_macro_hygiene, decl_macro)]
+
+#[macro_use] extern crate rocket;
+
+#[get("/")]
+fn index() -> &'static str {
+    "Hello, world!"
+}
+
+fn main() {
+    rocket::ignite().mount("/", routes![index]).launch();
+}
+
+/*
 mod model;
 
 use std::collections::HashMap;
@@ -47,3 +61,4 @@ async fn main() -> mongodb::error::Result<()> {
 
     Ok(())
 }
+*/

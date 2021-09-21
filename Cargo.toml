@@ -8,5 +8,6 @@ edition = "2018"
 [dependencies]
 bson = "2.0.0"
 mongodb = "2.0.0"
+rocket = "0.4.10"
 serde   = { version = "1.0", features = ["derive"] }
 tokio   = { version = "1", features = ["full"] }
