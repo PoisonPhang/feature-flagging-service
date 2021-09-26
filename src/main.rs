@@ -1,22 +1,24 @@
 //!
 //! Currently being used for testing
 //! 
-
-#![feature(proc_macro_hygiene, decl_macro)]
-
 #[macro_use] extern crate rocket;
+
+mod model;
+mod controller;
 
 #[get("/")]
 fn index() -> &'static str {
+    let client: mongodb::Client;
+    
     "Hello, world!"
 }
 
-fn main() {
-    rocket::ignite().mount("/", routes![index]).launch();
+#[launch]
+fn rocket() -> _ {
+    rocket::build().mount("/", routes![index])
 }
 
 /*
-mod model;
 
 use std::collections::HashMap;
 use std::{env, fs};

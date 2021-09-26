@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use bson::oid::ObjectId;
+use mongodb::bson::oid::ObjectId;
 
 use serde::{Deserialize, Serialize};
 

@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::vec::Vec;
 
-use bson::oid::ObjectId;
+use mongodb::bson::oid::ObjectId;
 
 use serde::{Deserialize, Serialize};
 
