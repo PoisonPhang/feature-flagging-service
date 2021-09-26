@@ -1,2 +1,4 @@
 /target
 database.creds
+Rocket.toml
+.env
