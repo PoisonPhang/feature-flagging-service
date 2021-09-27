@@ -3,14 +3,34 @@
 //! 
 #[macro_use] extern crate rocket;
 
+use mongodb::{bson::doc, Client, options::FindOptions};
+use futures::stream::TryStreamExt;
+
 mod model;
 mod controller;
 
+use controller::mongo::mongo;
+
 #[get("/")]
-fn index() -> &'static str {
-    let client: mongodb::Client;
-    
-    "Hello, world!"
+async fn index() -> String {
+    let client: Client = mongo::get_client().await.unwrap();
+
+    let db = client.database("data");
+    let features = db.collection::<model::flag::FeatureFlag>("features");
+    let filter = doc! {"name": "test:test_flag"};
+    let find_options = FindOptions::builder().sort(doc! {"name" : 1}).build();
+    let mut cursor = features.find(filter, find_options).await.unwrap();
+
+    let mut res = "test:test_flag".to_string();
+
+    while let Some(feature) = cursor.try_next().await.unwrap() {
+        match feature.enabled {
+            true => {res.push_str("true");},
+            false => {res.push_str("false");},
+        }
+    }
+
+    res
 }
 
 #[launch]

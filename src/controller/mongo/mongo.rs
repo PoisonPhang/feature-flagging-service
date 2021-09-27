@@ -7,7 +7,7 @@ pub async fn get_client() -> Result<Client, mongodb::error::Error> {
     let connection_string = match dotenv::var("MONGOSTR") {
         Ok(value) => value,
         Err(e) => {
-            println!("Error getting MongoDB connection string (MONGOSTR): {:?}", e);
+            panic!("Error getting MongoDB connection string (MONGOSTR): {:?}", e);
         }
     };
 

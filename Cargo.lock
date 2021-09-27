@@ -334,9 +334,11 @@ name = "feature-flagging-service"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "futures",
  "mongodb",
  "rocket",
  "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -1710,6 +1712,7 @@ dependencies = [
  "mio",
  "num_cpus",
  "once_cell",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "tokio-macros",
