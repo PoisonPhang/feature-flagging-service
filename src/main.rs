@@ -21,7 +21,7 @@ async fn index() -> String {
     let find_options = FindOptions::builder().sort(doc! {"name" : 1}).build();
     let mut cursor = features.find(filter, find_options).await.unwrap();
 
-    let mut res = "test:test_flag".to_string();
+    let mut res = "test:test_flag ".to_string();
 
     while let Some(feature) = cursor.try_next().await.unwrap() {
         match feature.enabled {
