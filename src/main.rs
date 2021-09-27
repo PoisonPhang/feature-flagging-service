@@ -11,8 +11,8 @@ mod controller;
 
 use controller::mongo::mongo;
 
-#[get("/")]
-async fn index() -> String {
+#[get("/check/<product>/<feature>/<user>")]
+async fn index(feature: &str, user: &str) -> String {
     let client: Client = mongo::get_client().await.unwrap();
 
     let db = client.database("data");
