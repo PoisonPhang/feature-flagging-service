@@ -55,7 +55,7 @@ pub enum ReleaseType {
     /// Release is global, only controlled by the `FeatureFlag`s `enabled` property
     Global,
     /// Release is limited, limited to a specified list of `user_states`
-    Limited {user_states: HashMap<ObjectId, bool>},
+    Limited(HashMap<ObjectId, bool>),
     /// Release is percentage, limited to a `percentage` of `user_states`
-    Percentage {percentage: f32, user_states: HashMap<ObjectId, bool>},
+    Percentage (f32, HashMap<ObjectId, bool>),
 }
