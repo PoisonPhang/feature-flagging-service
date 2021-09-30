@@ -3,29 +3,54 @@
 //! 
 #[macro_use] extern crate rocket;
 
-use mongodb::{bson::doc, Client, options::FindOptions};
+use mongodb::{bson::doc, bson::oid::ObjectId, Client, options::FindOptions};
 use futures::stream::TryStreamExt;
 
 mod model;
 mod controller;
 
+use model::flag::ReleaseType;
 use controller::mongo::mongo;
 
 #[get("/check/<product>/<feature>/<user>")]
-async fn index(feature: &str, user: &str) -> String {
+async fn check(product: &str, feature: &str, user: &str) -> String {
     let client: Client = mongo::get_client().await.unwrap();
 
+    // TODO move to controller/mongo/mongo.rs
     let db = client.database("data");
     let features = db.collection::<model::flag::FeatureFlag>("features");
-    let filter = doc! {"name": "test:test_flag"};
+
+    // Create FindOptions
+    let filter = doc! {"name": feature, "product": product};
     let find_options = FindOptions::builder().sort(doc! {"name" : 1}).build();
+
+    // Filter collection with FindOptions
     let mut cursor = features.find(filter, find_options).await.unwrap();
 
-    let mut res = "test:test_flag ".to_string();
+    let mut res = String::new();
 
     while let Some(feature) = cursor.try_next().await.unwrap() {
         match feature.enabled {
-            true => {res.push_str("true");},
+            true => match feature.client_toggle {
+                true => match feature.release_type {
+                    ReleaseType::Global => {
+                        res.push_str("1");
+                    }
+                    ReleaseType::Limited(user_states) => {
+                        match user_states.get(&ObjectId::parse_str(user).unwrap()) {
+                            Some (_) => {}
+                            None => {}
+                        }
+                    }
+                    ReleaseType::Percentage(_, user_states) => {
+                        match user_states.get(&ObjectId::parse_str(user).unwrap()) {
+                            Some (_) => {}
+                            None => {}
+                        }
+                    }
+                },
+                false => {res.push_str("false");},
+            },
             false => {res.push_str("false");},
         }
     }
@@ -35,7 +60,7 @@ async fn index(feature: &str, user: &str) -> String {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    rocket::build().mount("/", routes![check])
 }
 
 /*
