@@ -12,6 +12,11 @@ mod controller;
 use model::flag::ReleaseType;
 use controller::mongo::mongo;
 
+#[get("/")]
+async fn index() -> String {
+    "Not 404, we just don't have a page yet".to_string()
+}
+
 #[get("/check/<product>/<feature>/<user>")]
 async fn check(product: &str, feature: &str, user: &str) -> String {
     let client: Client = mongo::get_client().await.unwrap();
@@ -21,46 +26,30 @@ async fn check(product: &str, feature: &str, user: &str) -> String {
     let features = db.collection::<model::flag::FeatureFlag>("features");
 
     // Create FindOptions
-    let filter = doc! {"name": feature, "product": product};
+    let filter = doc! {"name": "test:test_flag", "product": product};
     let find_options = FindOptions::builder().sort(doc! {"name" : 1}).build();
 
     // Filter collection with FindOptions
     let mut cursor = features.find(filter, find_options).await.unwrap();
 
-    let mut res = String::new();
+    print!("Looking for feature: {}\n", feature);
 
     while let Some(feature) = cursor.try_next().await.unwrap() {
-        match feature.enabled {
-            true => match feature.client_toggle {
-                true => match feature.release_type {
-                    ReleaseType::Global => {
-                        res.push_str("1");
-                    }
-                    ReleaseType::Limited(user_states) => {
-                        match user_states.get(&ObjectId::parse_str(user).unwrap()) {
-                            Some (_) => {}
-                            None => {}
-                        }
-                    }
-                    ReleaseType::Percentage(_, user_states) => {
-                        match user_states.get(&ObjectId::parse_str(user).unwrap()) {
-                            Some (_) => {}
-                            None => {}
-                        }
-                    }
-                },
-                false => {res.push_str("false");},
-            },
-            false => {res.push_str("false");},
+        print!("Flag found!\n");
+        if feature.evaluate(user) {
+            print!("Returning true\n");
+            return "1".to_string()
         }
     }
 
-    res
+    print!("{} not found\n", feature);
+
+    "0".to_string()
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![check])
+    rocket::build().mount("/", routes![index, check])
 }
 
 /*

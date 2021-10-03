@@ -42,6 +42,47 @@ impl FeatureFlag {
             release_type,
         }
     }
+
+    pub fn evaluate(&self, user: &str) -> bool {
+        if self.enabled {
+            match &self.release_type {
+                ReleaseType::Global => {
+                    return true;
+                }
+                ReleaseType::Limited(user_states) => {
+                    match user_states.get(&ObjectId::parse_str(user).unwrap()) {
+                        Some(user_state) => {
+                            if !self.client_toggle {
+                                return true;
+                            }
+
+                            if *user_state {
+                                return true;
+                            }
+                        }
+                        None => {}
+                    }
+                }
+                ReleaseType::Percentage(_, user_states) => {
+                    match user_states.get(&ObjectId::parse_str(user).unwrap()) {
+                        Some(user_state) => {
+                            if !self.client_toggle {
+                                return true;
+                            }
+
+                            if *user_state {
+                                return true;
+                            }
+                        }
+                        None => {}
+                    }
+                }
+            }
+        }
+
+        print!("Returning false\n");
+        false
+    }
 }
 
 ///
