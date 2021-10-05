@@ -1,3 +1,7 @@
+//!
+//! MongoDB connection management
+//! 
+
 use dotenv;
 use mongodb::{Client, options::ClientOptions};
 
