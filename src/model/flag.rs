@@ -85,6 +85,17 @@ impl FeatureFlag {
     }
 }
 
+impl Default for FeatureFlag {
+    fn default() -> FeatureFlag {
+        FeatureFlag {
+            name: "default_flag".to_string(),
+            enabled: false,
+            client_toggle: false,
+            release_type: ReleaseType::Global,
+        }
+    }
+}
+
 ///
 /// # ReleaseType
 /// Data object for a Feature Flag Release Type

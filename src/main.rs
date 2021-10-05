@@ -19,31 +19,10 @@ async fn index() -> String {
 
 #[get("/check/<product>/<feature>/<user>")]
 async fn check(product: &str, feature: &str, user: &str) -> String {
-    let client: Client = mongo::get_client().await.unwrap();
-
-    // TODO move to controller/mongo/mongo.rs
-    let db = client.database("data");
-    let features = db.collection::<model::flag::FeatureFlag>("features");
-
-    // Create FindOptions
-    let filter = doc! {"name": "test:test_flag", "product": product};
-    let find_options = FindOptions::builder().sort(doc! {"name" : 1}).build();
-
-    // Filter collection with FindOptions
-    let mut cursor = features.find(filter, find_options).await.unwrap();
-
-    print!("Looking for feature: {}\n", feature);
-
-    while let Some(feature) = cursor.try_next().await.unwrap() {
-        print!("Flag found!\n");
-        if feature.evaluate(user) {
-            print!("Returning true\n");
-            return "1".to_string()
-        }
+    if mongo::get_feature_flag(product, feature).await.unwrap().evaluate(user) {
+        "1".to_string();
     }
-
-    print!("{} not found\n", feature);
-
+    
     "0".to_string()
 }
 
