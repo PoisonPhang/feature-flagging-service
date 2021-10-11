@@ -10,7 +10,7 @@ mod model;
 mod controller;
 
 use model::flag::ReleaseType;
-use controller::mongo::mongo;
+use controller::database::mongo::mongo;
 
 #[get("/")]
 async fn index() -> String {
