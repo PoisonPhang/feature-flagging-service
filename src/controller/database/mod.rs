@@ -3,7 +3,10 @@
 //! 
 
 use dotenv;
+
 use crate::model::flag::FeatureFlag;
+use crate::model::product::Product;
+use crate::model::user::User;
 
 pub mod mongo;
 
@@ -32,13 +35,41 @@ impl ConnectionManager {
         }
     }
 
+    pub async fn get_product(&self, product_name: &str) -> Option<Product> {
+        match &self.connection_type {
+            ConnectionType::MongoDB => {
+                match mongo::mongo::get_product(product_name).await {
+                    Ok(value) => return Some(value),
+                    Err(e) => {
+                        print!("Error getting product '{}'. Returning Option::None. Error {:?}", product_name, e);
+                        return None
+                    }
+                }
+            }
+        }
+    }
+
     pub async fn get_feature_flag(&self, product: &str, flag_name: &str) -> Option<FeatureFlag> {
         match &self.connection_type {
             ConnectionType::MongoDB => {
                 match mongo::mongo::get_feature_flag(product, flag_name).await {
                     Ok(value) => return Some(value),
                     Err(e) => {
-                        print!("Error getting feature `{}`. Returning Option::None. Error: {:?}", flag_name, e);
+                        print!("Error getting feature '{}'. Returning Option::None. Error: {:?}", flag_name, e);
+                        return None
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn get_user(&self, user_email: &str) -> Option<User> {
+        match &self.connection_type {
+            ConnectionType::MongoDB => {
+                match mongo::mongo::get_user(user_email).await {
+                    Ok(value) => return Some(value),
+                    Err(e) => {
+                        print!("Error getting user from email '{}'. Returning Option::None. Error: {:?}", user_email, e);
                         return None
                     }
                 }

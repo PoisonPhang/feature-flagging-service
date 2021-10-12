@@ -4,13 +4,11 @@
 #[macro_use] extern crate rocket;
 use rocket::State;
 
-use mongodb::{bson::doc, bson::oid::ObjectId, Client, options::FindOptions};
-use futures::stream::TryStreamExt;
+use mongodb::bson::doc;
 
 mod model;
 mod controller;
 
-use model::flag::ReleaseType;
 use controller::database::ConnectionManager;
 
 const FLAG_TRUE: &str = "1";
