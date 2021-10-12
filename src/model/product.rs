@@ -2,14 +2,11 @@
 //! Data model for Products
 //! 
 
-use std::collections::HashMap;
 use std::vec::Vec;
 
 use mongodb::bson::oid::ObjectId;
 
 use serde::{Deserialize, Serialize};
-
-use crate::model::flag;
 
 ///
 /// # Product
@@ -17,27 +14,21 @@ use crate::model::flag;
 /// 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Product {
+    /// ObjectID generated my MongoDB
+    #[serde(alias = "_id")]
+    pub id: ObjectId, 
     /// Product Name
     pub name: String,
     /// List of controlled features in the product
     pub features: Vec<ObjectId>,
 }
 
-impl Product {
-    ///
-    /// # Product::new()
-    /// Creates and returns a new `Product` with the provided fields
-    /// 
-    /// Declare as mutable if you want to alter the vector of features
-    /// 
-    /// ## Example
-    /// ```
-    /// let mut product = Product::new("example_product".to_string(), vec!());
-    /// ```
-    pub fn new(name: String, features: Vec<ObjectId>) -> Product {
+impl Default for Product {
+    fn default() -> Product {
         Product {
-            name,
-            features,
+            id: ObjectId::default(),
+            name: "default_product".to_string(),
+            features: Vec::new(),
         }
     }
 }

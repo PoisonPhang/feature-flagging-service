@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 /// 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
+    /// ObjectID generated my MongoDB
+    #[serde(alias = "_id")]
+    pub id: ObjectId, 
     /// Flag Name
     pub name: String,
     /// Global enabled status of the flag (false trumps other statuses)
@@ -26,23 +29,6 @@ pub struct FeatureFlag {
 }
 
 impl FeatureFlag {
-    ///
-    /// # FeatureFlag::new()
-    /// Creates and returns a new `FeatureFlag` with the provided fields
-    /// 
-    /// ## Example
-    /// ```
-    /// let flag = FeatureFlag::new("example:flag_name".to_string(), true, false, ReleaseType::Global);
-    /// ```
-    pub fn new(name: String, enabled: bool, client_toggle: bool, release_type: ReleaseType) -> FeatureFlag {
-        FeatureFlag {
-            name,
-            enabled,
-            client_toggle,
-            release_type,
-        }
-    }
-
     pub fn evaluate(&self, user: &str) -> bool {
         if self.enabled {
             match &self.release_type {
@@ -88,6 +74,7 @@ impl FeatureFlag {
 impl Default for FeatureFlag {
     fn default() -> FeatureFlag {
         FeatureFlag {
+            id: ObjectId::default(),
             name: "default_flag".to_string(),
             enabled: false,
             client_toggle: false,
