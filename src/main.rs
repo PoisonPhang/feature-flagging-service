@@ -2,6 +2,7 @@
 //! Currently being used for testing
 //! 
 #[macro_use] extern crate rocket;
+use rocket::State;
 
 use mongodb::{bson::doc, bson::oid::ObjectId, Client, options::FindOptions};
 use futures::stream::TryStreamExt;
@@ -10,7 +11,10 @@ mod model;
 mod controller;
 
 use model::flag::ReleaseType;
-use controller::database::mongo::mongo;
+use controller::database::ConnectionManager;
+
+const FLAG_TRUE: &str = "1";
+const FLAG_FALSE: &str = "0";
 
 #[get("/")]
 async fn index() -> String {
@@ -18,17 +22,22 @@ async fn index() -> String {
 }
 
 #[get("/check/<product>/<feature>/<user>")]
-async fn check(product: &str, feature: &str, user: &str) -> String {
-    if mongo::get_feature_flag(product, feature).await.unwrap().evaluate(user) {
-        "1".to_string();
+async fn check(product: &str, feature: &str, user: &str, database_connection: &State<ConnectionManager>) -> String {
+    match database_connection.get_feature_flag(product, feature).await {
+        Some(response) => {
+            if response.evaluate(user) {
+                return FLAG_TRUE.to_string()
+            }
+        },
+        None => return FLAG_TRUE.to_string()
     }
-    
-    "0".to_string()
+
+    FLAG_FALSE.to_string()
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, check])
+    rocket::build().manage(ConnectionManager::new()).mount("/", routes![index, check])
 }
 
 /*

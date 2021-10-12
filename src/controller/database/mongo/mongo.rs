@@ -33,7 +33,7 @@ pub async fn get_feature_flag(product: &str, flag_name: &str) -> Result<FeatureF
 async fn get_client() -> Result<Client, mongodb::error::Error> {
     dotenv::dotenv().ok();
 
-    let connection_string = match dotenv::var("MONGOSTR") {
+    let connection_string = match dotenv::var("MONGO_STR") {
         Ok(value) => value,
         Err(e) => {
             panic!("Error getting MongoDB connection string (MONGOSTR): {:?}", e);
