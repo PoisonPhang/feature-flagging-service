@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Product {
     /// ObjectID generated my MongoDB
-    #[serde(alias = "_id")]
+    #[serde(alias = "_id", skip_serializing)]
     pub id: ObjectId, 
     /// Product Name
     pub name: String,

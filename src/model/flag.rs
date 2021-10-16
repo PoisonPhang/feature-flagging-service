@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
     /// ObjectID generated my MongoDB
-    #[serde(alias = "_id")]
+    #[serde(alias = "_id", skip_serializing)]
     pub id: ObjectId, 
     /// Flag Name
     pub name: String,
