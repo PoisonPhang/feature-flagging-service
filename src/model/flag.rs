@@ -29,7 +29,27 @@ pub struct FeatureFlag {
 }
 
 impl FeatureFlag {
-    pub fn evaluate(&self, user: &str) -> bool {
+    pub fn evaluate(&self, user: Option<&str>) -> bool {
+
+        // If no user is provided, only evaluate Global release type as potentially true
+        let user = match user {
+            Some(value) => value,
+            None => {
+                if self.enabled {
+                    match &self.release_type {
+                        ReleaseType::Global => {
+                            return true
+                        },
+                        _ => {
+                            return false
+                        }
+                    }
+                }
+                return false
+            }
+        };
+
+        // Evaluate each release type against the provided user
         if self.enabled {
             match &self.release_type {
                 ReleaseType::Global => {
@@ -66,7 +86,6 @@ impl FeatureFlag {
             }
         }
 
-        print!("Returning false\n");
         false
     }
 }

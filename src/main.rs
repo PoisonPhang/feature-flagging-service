@@ -20,10 +20,24 @@ async fn index() -> String {
 }
 
 #[get("/check/<product>/<feature>/<user>")]
-async fn check(product: &str, feature: &str, user: &str, database_connection: &State<ConnectionManager>) -> String {
+async fn check_with_user(product: &str, feature: &str, user: &str, database_connection: &State<ConnectionManager>) -> String {
     match database_connection.get_feature_flag(product, feature).await {
         Some(response) => {
-            if response.evaluate(user) {
+            if response.evaluate(Some(user)) {
+                return FLAG_TRUE.to_string()
+            }
+        },
+        None => return FLAG_TRUE.to_string()
+    }
+
+    FLAG_FALSE.to_string()
+}
+
+#[get("/check/<product>/<feature>")]
+async fn check(product: &str, feature: &str, database_connection: &State<ConnectionManager>) -> String {
+    match database_connection.get_feature_flag(product, feature).await {
+        Some(response) => {
+            if response.evaluate(None) {
                 return FLAG_TRUE.to_string()
             }
         },
@@ -35,7 +49,7 @@ async fn check(product: &str, feature: &str, user: &str, database_connection: &S
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().manage(ConnectionManager::new()).mount("/", routes![index, check])
+    rocket::build().manage(ConnectionManager::new()).mount("/", routes![index, check, check_with_user])
 }
 
 /*
