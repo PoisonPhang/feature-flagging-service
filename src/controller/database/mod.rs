@@ -6,7 +6,7 @@ use dotenv;
 
 use crate::model::flag::FeatureFlag;
 use crate::model::product::Product;
-use crate::model::user::User;
+use crate::model::user::{User, UserBuilder};
 
 pub mod mongo;
 
@@ -70,6 +70,20 @@ impl ConnectionManager {
                     Ok(value) => return Some(value),
                     Err(e) => {
                         print!("Error getting user from email '{}'. Returning Option::None. Error: {:?}", user_email, e);
+                        return None
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn create_user(&self, user_builder: UserBuilder) -> Option<User> {
+        match &self.connection_type {
+            ConnectionType::MongoDB => {
+                match mongo::mongo::create_user(user_builder).await {
+                    Ok(value) => return Some(value),
+                    Err(e) => {
+                        print!("Error creating user. Returning Option::None. Error {:?}", e);
                         return None
                     }
                 }

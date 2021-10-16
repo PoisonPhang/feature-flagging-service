@@ -7,7 +7,6 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 ///
-/// # User
 /// Data object for users
 /// 
 #[derive(Debug, Serialize, Deserialize)]
@@ -16,11 +15,11 @@ pub struct User {
     #[serde(alias = "_id", skip_serializing)]
     pub id: ObjectId, 
     /// User Name
-    name: String,
+    pub name: String,
     /// User email
-    email: String,
+    pub email: String,
     /// User password hash
-    password_hash: String,
+    pub password_hash: String,
 }
 
 impl Default for User {
@@ -35,11 +34,12 @@ impl Default for User {
 }
 
 impl User {
-    fn builder() -> UserBuilder {
+    pub fn builder() -> UserBuilder {
         UserBuilder::new()
     }
 }
 
+#[derive(Clone)]
 pub struct UserBuilder {
         /// ObjectID generated my MongoDB
         pub id: ObjectId, 
@@ -65,31 +65,51 @@ impl Default for UserBuilder {
 }
 
 impl UserBuilder {
+
+    ///
+    /// Creates a new `UserBuilder` with default fields from `UserBuilder::default()`
+    /// 
     fn new() -> UserBuilder {
         UserBuilder::default()
     }
 
-    fn with_id(mut self, id: ObjectId) -> UserBuilder {
+    pub fn with_id(mut self, id: ObjectId) -> UserBuilder {
         self.id = id;
         self
     }
 
-    fn with_name(mut self, name: String) -> UserBuilder {
-        self.name = name;
+    pub fn with_name(mut self, name: &str) -> UserBuilder {
+        self.name = name.to_string();
         self
     }
 
-    fn with_email(mut self, email: String) -> UserBuilder {
-        self.email = email;
+    pub fn with_email(mut self, email: &str) -> UserBuilder {
+        self.email = email.to_string();
         self
     }
 
-    fn with_password_hash(mut self, password_hash: String) -> UserBuilder {
-        self.password_hash = password_hash;
+    pub fn with_password_hash(mut self, password_hash: &str) -> UserBuilder {
+        self.password_hash = password_hash.to_string();
         self
     }
 
-    fn build(self) -> User {
+    ///
+    /// Builds itself into and returns a `User` consuming the `UserBuilder`
+    /// 
+    /// # Examples
+    /// Basic usage:
+    /// ```
+    /// let user_builder = User::builder();
+    /// let user = user_builder.with_name("examples_name").build();
+    /// ```
+    /// To avoid consumption, use `clone()`
+    /// ```
+    /// let user_builder = User::builder();
+    /// let user_one = user_builder.with_id("examples_name_one").clone().build();
+    /// let user_two = user_builder.with_id("examples_name_two").clone().build();
+    /// ```
+    /// 
+    pub fn build(self) -> User {
         User {
             id: self.id,
             name: self.name,

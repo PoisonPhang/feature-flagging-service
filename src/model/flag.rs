@@ -9,8 +9,6 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 ///
-/// # FeatureFlag
-/// 
 /// Data Object for a Feature Flag
 /// 
 #[derive(Debug, Serialize, Deserialize)]

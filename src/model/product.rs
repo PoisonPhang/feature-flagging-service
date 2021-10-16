@@ -9,7 +9,6 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 ///
-/// # Product
 /// Data object for products
 /// 
 #[derive(Debug, Serialize, Deserialize)]
