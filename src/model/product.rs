@@ -31,3 +31,59 @@ impl Default for Product {
         }
     }
 }
+
+impl Product {
+    pub fn builder() -> ProductBuilder {
+        ProductBuilder::new()
+    }
+}
+
+#[derive(Clone)]
+pub struct ProductBuilder {
+    /// ObjectID generated my MongoDB
+    pub id: ObjectId, 
+    /// Product Name
+    pub name: String,
+    /// List of controlled features in the product
+    pub features: Vec<ObjectId>,
+}
+
+impl Default for ProductBuilder {
+    fn default() -> ProductBuilder {
+        let default_product = Product::default();
+        ProductBuilder {
+            id: default_product.id,
+            name: default_product.name,
+            features: default_product.features,
+        }
+    }
+}
+
+impl ProductBuilder {
+    fn new() -> ProductBuilder {
+        ProductBuilder::default()
+    }
+
+    pub fn with_id(mut self, id: ObjectId) -> ProductBuilder {
+        self.id = id;
+        self
+    }
+
+    pub fn with_name(mut self, name: String) -> ProductBuilder {
+        self.name = name;
+        self
+    }
+
+    pub fn with_features(mut self, features: Vec<ObjectId>) -> ProductBuilder {
+        self.features = features;
+        self
+    }
+
+    pub fn build(self) -> Product {
+        Product {
+            id: self.id,
+            name: self.name,
+            features: self.features,
+        }
+    }
+}

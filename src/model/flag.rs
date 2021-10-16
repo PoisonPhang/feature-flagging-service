@@ -100,18 +100,87 @@ impl Default for FeatureFlag {
     }
 }
 
+#[derive(Clone)]
+struct FeatureFlagBuilder {
+    /// ObjectID generated my MongoDB
+    pub id: ObjectId, 
+    /// Flag Name
+    pub name: String,
+    /// Global enabled status of the flag (false trumps other statuses)
+    pub enabled: bool,
+    /// If client toggles are enabled
+    pub client_toggle: bool,
+    /// Type of release and relevant data
+    pub release_type: ReleaseType,
+}
+
+impl Default for FeatureFlagBuilder {
+    fn default() -> FeatureFlagBuilder {
+        let default_flag = FeatureFlag::default();
+
+        FeatureFlagBuilder {
+            id: default_flag.id,
+            name: default_flag.name,
+            enabled: default_flag.enabled,
+            client_toggle: default_flag.client_toggle,
+            release_type: default_flag.release_type,
+        }
+    }
+}
+
+impl FeatureFlagBuilder {
+    fn new() -> FeatureFlagBuilder {
+        FeatureFlagBuilder::default()
+    }
+
+    pub fn with_id(mut self, id: ObjectId) -> FeatureFlagBuilder {
+        self.id = id;
+        self
+    }
+
+    pub fn with_name(mut self, name: String) -> FeatureFlagBuilder {
+        self.name = name;
+        self
+    }
+
+    pub fn with_enabled(mut self, enabled: bool) -> FeatureFlagBuilder {
+        self.enabled = enabled;
+        self
+    }
+
+    pub fn with_client_toggle(mut self, client_toggle: bool) -> FeatureFlagBuilder {
+        self.client_toggle = client_toggle;
+        self
+    }
+
+    pub fn with_release_type(mut self, release_type: ReleaseType) -> FeatureFlagBuilder {
+        self.release_type = release_type;
+        self
+    }
+
+    pub fn build(self) -> FeatureFlag {
+        FeatureFlag {
+            id: self.id,
+            name: self.name,
+            enabled: self.enabled,
+            client_toggle: self.client_toggle,
+            release_type: self.release_type,
+        }
+    }
+}
+
 ///
 /// # ReleaseType
 /// Data object for a Feature Flag Release Type
 /// 
 /// Release types contain relevant information to the type of release
 /// 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ReleaseType {
     /// Release is global, only controlled by the `FeatureFlag`s `enabled` property
     Global,
     /// Release is limited, limited to a specified list of `user_states`
-    Limited(HashMap<ObjectId, bool>),
+    Limited (HashMap<ObjectId, bool>),
     /// Release is percentage, limited to a `percentage` of `user_states`
     Percentage (f32, HashMap<ObjectId, bool>),
 }
