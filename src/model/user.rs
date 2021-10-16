@@ -34,6 +34,12 @@ impl Default for User {
     }
 }
 
+impl User {
+    fn builder() -> UserBuilder {
+        UserBuilder::new()
+    }
+}
+
 pub struct UserBuilder {
         /// ObjectID generated my MongoDB
         pub id: ObjectId, 
@@ -63,22 +69,22 @@ impl UserBuilder {
         UserBuilder::default()
     }
 
-    fn set_id(mut self, id: ObjectId) -> UserBuilder {
+    fn with_id(mut self, id: ObjectId) -> UserBuilder {
         self.id = id;
         self
     }
 
-    fn set_name(mut self, name: String) -> UserBuilder {
+    fn with_name(mut self, name: String) -> UserBuilder {
         self.name = name;
         self
     }
 
-    fn set_email(mut self, email: String) -> UserBuilder {
+    fn with_email(mut self, email: String) -> UserBuilder {
         self.email = email;
         self
     }
 
-    fn set_password_hash(mut self, password_hash: String) -> UserBuilder {
+    fn with_password_hash(mut self, password_hash: String) -> UserBuilder {
         self.password_hash = password_hash;
         self
     }
