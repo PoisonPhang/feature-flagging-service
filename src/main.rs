@@ -1,14 +1,15 @@
 //!
 //! Currently being used for testing
-//! 
-#[macro_use] extern crate rocket;
+//!
+#[macro_use]
+extern crate rocket;
 
-mod model;
 mod controller;
+mod model;
 
-use rocket::State;
-use mongodb::bson::doc;
 use controller::database::ConnectionManager;
+use mongodb::bson::doc;
+use rocket::State;
 
 use model::user::{User, UserBuilder};
 
@@ -21,35 +22,49 @@ async fn index() -> String {
 }
 
 #[get("/check/<product>/<feature>/<user>")]
-async fn check_with_user(product: &str, feature: &str, user: &str, database_connection: &State<ConnectionManager>) -> String {
+async fn check_with_user(
+    product: &str,
+    feature: &str,
+    user: &str,
+    database_connection: &State<ConnectionManager>,
+) -> String {
     match database_connection.get_feature_flag(product, feature).await {
         Some(response) => {
             if response.evaluate(Some(user)) {
-                return FLAG_TRUE.to_string()
+                return FLAG_TRUE.to_string();
             }
-        },
-        None => return FLAG_TRUE.to_string()
+        }
+        None => return FLAG_TRUE.to_string(),
     }
 
     FLAG_FALSE.to_string()
 }
 
 #[get("/check/<product>/<feature>")]
-async fn check(product: &str, feature: &str, database_connection: &State<ConnectionManager>) -> String {
+async fn check(
+    product: &str,
+    feature: &str,
+    database_connection: &State<ConnectionManager>,
+) -> String {
     match database_connection.get_feature_flag(product, feature).await {
         Some(response) => {
             if response.evaluate(None) {
-                return FLAG_TRUE.to_string()
+                return FLAG_TRUE.to_string();
             }
-        },
-        None => return FLAG_TRUE.to_string()
+        }
+        None => return FLAG_TRUE.to_string(),
     }
 
     FLAG_FALSE.to_string()
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
-async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>) -> String {
+async fn create_user(
+    name: &str,
+    email: &str,
+    hash: &str,
+    database_connection: &State<ConnectionManager>,
+) -> String {
     let user_builder = User::builder()
         .with_name(name)
         .with_email(email)
@@ -57,7 +72,7 @@ async fn create_user(name: &str, email: &str, hash: &str, database_connection: &
 
     let user = match database_connection.create_user(user_builder).await {
         Some(value) => value,
-        None => return format!("Failed to create user: {}", name)
+        None => return format!("Failed to create user: {}", name),
     };
 
     format!("User {} created with id {}", user.name, user.id)
@@ -65,5 +80,7 @@ async fn create_user(name: &str, email: &str, hash: &str, database_connection: &
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().manage(ConnectionManager::new()).mount("/", routes![index, check, check_with_user])
+    rocket::build()
+        .manage(ConnectionManager::new())
+        .mount("/", routes![index, check, check_with_user])
 }

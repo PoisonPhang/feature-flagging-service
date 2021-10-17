@@ -1,6 +1,6 @@
 //!
 //! Data model for Users
-//! 
+//!
 
 use mongodb::bson::oid::ObjectId;
 
@@ -8,12 +8,12 @@ use serde::{Deserialize, Serialize};
 
 ///
 /// Data object for users
-/// 
+///
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     /// ObjectID generated my MongoDB
     #[serde(alias = "_id", skip_serializing)]
-    pub id: ObjectId, 
+    pub id: ObjectId,
     /// User Name
     pub name: String,
     /// User email
@@ -41,14 +41,14 @@ impl User {
 
 #[derive(Clone)]
 pub struct UserBuilder {
-        /// ObjectID generated my MongoDB
-        pub id: ObjectId, 
-        /// User Name
-        name: String,
-        /// User email
-        email: String,
-        /// User password hash
-        password_hash: String,
+    /// ObjectID generated my MongoDB
+    pub id: ObjectId,
+    /// User Name
+    name: String,
+    /// User email
+    email: String,
+    /// User password hash
+    password_hash: String,
 }
 
 impl Default for UserBuilder {
@@ -65,10 +65,9 @@ impl Default for UserBuilder {
 }
 
 impl UserBuilder {
-
     ///
     /// Creates a new `UserBuilder` with default fields from `UserBuilder::default()`
-    /// 
+    ///
     fn new() -> UserBuilder {
         UserBuilder::default()
     }
@@ -95,7 +94,7 @@ impl UserBuilder {
 
     ///
     /// Builds itself into and returns a `User` consuming the `UserBuilder`
-    /// 
+    ///
     /// # Examples
     /// Basic usage:
     /// ```
@@ -108,7 +107,7 @@ impl UserBuilder {
     /// let user_one = user_builder.with_id("examples_name_one").clone().build();
     /// let user_two = user_builder.with_id("examples_name_two").clone().build();
     /// ```
-    /// 
+    ///
     pub fn build(self) -> User {
         User {
             id: self.id,

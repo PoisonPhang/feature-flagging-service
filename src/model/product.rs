@@ -1,6 +1,6 @@
 //!
 //! Data model for Products
-//! 
+//!
 
 use std::vec::Vec;
 
@@ -10,12 +10,12 @@ use serde::{Deserialize, Serialize};
 
 ///
 /// Data object for products
-/// 
+///
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Product {
     /// ObjectID generated my MongoDB
     #[serde(alias = "_id", skip_serializing)]
-    pub id: ObjectId, 
+    pub id: ObjectId,
     /// Product Name
     pub name: String,
     /// List of controlled features in the product
@@ -41,7 +41,7 @@ impl Product {
 #[derive(Clone)]
 pub struct ProductBuilder {
     /// ObjectID generated my MongoDB
-    pub id: ObjectId, 
+    pub id: ObjectId,
     /// Product Name
     pub name: String,
     /// List of controlled features in the product
