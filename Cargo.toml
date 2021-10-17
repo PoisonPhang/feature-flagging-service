@@ -1,17 +1,17 @@
 [package]
-name = "feature-flagging-service"
+name    = "feature-flagging-service"
 version = "0.1.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dotenv = "0.15.0"
+dotenv  = "0.15.0"
 futures = "0.3.17"
 mongodb = "2.0.0"
-rocket = "0.5.0-rc.1"
-tokio = { version = "1.12.0", features = ["full"] }
+rocket  = "0.5.0-rc.1"
+tokio   = { version = "1.12.0", features = ["full"] }
 
 [dependencies.serde]
-version = "1.0"
+version  = "1.0"
 features = ["derive"]
