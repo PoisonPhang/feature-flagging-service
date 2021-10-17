@@ -1,6 +1,5 @@
 //!
 //! MongoDB connection management
-//!
 
 use dotenv;
 use futures::stream::TryStreamExt;
@@ -14,87 +13,84 @@ use crate::model::product::Product;
 use crate::model::user::{User, UserBuilder};
 
 ///
-/// Given a product name, this will search for and return a fully constructed `Product` from MongoDB wrapped inside of a `Result`.  
+/// Given a product name, this will search for and return a fully constructed `Product` from MongoDB wrapped inside of a
+/// `Result`.
 ///
 /// If no product is found, will return the result of `Product::default()`.  
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-///
 pub async fn get_product(product_name: &str) -> Result<Product, mongodb::error::Error> {
-    let client = get_client().await?;
-    let mut product = Product::default();
+  let client = get_client().await?;
+  let mut product = Product::default();
 
-    let db = client.database("data");
-    let product_collection = db.collection::<Product>("products");
+  let db = client.database("data");
+  let product_collection = db.collection::<Product>("products");
 
-    let filter = doc! { "name": product_name };
-    let find_options = FindOptions::builder().sort(doc! { "name": 1 }).build();
+  let filter = doc! { "name": product_name };
+  let find_options = FindOptions::builder().sort(doc! { "name": 1 }).build();
 
-    let mut cursor = product_collection.find(filter, find_options).await?;
+  let mut cursor = product_collection.find(filter, find_options).await?;
 
-    while let Some(product_found) = cursor.try_next().await? {
-        product = product_found;
-    }
+  while let Some(product_found) = cursor.try_next().await? {
+    product = product_found;
+  }
 
-    Ok(product)
+  Ok(product)
 }
 
 ///
-/// Given a product name and flag name, this will search for and return a fully constructed `FeatureFlag` from MongoDB wrapped inside of a `Result`.  
+/// Given a product name and flag name, this will search for and return a fully constructed `FeatureFlag` from MongoDB
+/// wrapped inside of a `Result`.
 ///
 /// If no feature flag is found, will return the result of `FeatureFlag::default()`.  
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-///
-pub async fn get_feature_flag(
-    product: &str,
-    flag_name: &str,
-) -> Result<FeatureFlag, mongodb::error::Error> {
-    let client = get_client().await?;
-    let mut feature = FeatureFlag::default();
+pub async fn get_feature_flag(product: &str, flag_name: &str) -> Result<FeatureFlag, mongodb::error::Error> {
+  let client = get_client().await?;
+  let mut feature = FeatureFlag::default();
 
-    let db = client.database("data");
-    let features_collection = db.collection::<FeatureFlag>("features");
+  let db = client.database("data");
+  let features_collection = db.collection::<FeatureFlag>("features");
 
-    let filter = doc! { "name": flag_name, "product": product };
-    let find_options = FindOptions::builder().sort(doc! {"name": 1 }).build();
+  let filter = doc! { "name": flag_name, "product": product };
+  let find_options = FindOptions::builder().sort(doc! {"name": 1 }).build();
 
-    let mut cursor = features_collection.find(filter, find_options).await?;
+  let mut cursor = features_collection.find(filter, find_options).await?;
 
-    while let Some(feature_found) = cursor.try_next().await? {
-        feature = feature_found;
-    }
+  while let Some(feature_found) = cursor.try_next().await? {
+    feature = feature_found;
+  }
 
-    Ok(feature)
+  Ok(feature)
 }
 
 ///
-/// Given a user email, this will search for and return a fully constructed `User` from MongoDB wrapped inside of a `Result`.  
+/// Given a user email, this will search for and return a fully constructed `User` from MongoDB wrapped inside of a
+/// `Result`.
 ///
 /// If no user is found, will return the result of `User::default()`.  
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-///
 pub async fn get_user(user_email: &str) -> Result<User, mongodb::error::Error> {
-    let client = get_client().await?;
-    let mut user = User::default();
+  let client = get_client().await?;
+  let mut user = User::default();
 
-    let db = client.database("data");
-    let user_collection = db.collection::<User>("users");
+  let db = client.database("data");
+  let user_collection = db.collection::<User>("users");
 
-    let filter = doc! {"email": user_email };
-    let find_options = FindOptions::builder().sort(doc! { "email": 1}).build();
+  let filter = doc! {"email": user_email };
+  let find_options = FindOptions::builder().sort(doc! { "email": 1}).build();
 
-    let mut cursor = user_collection.find(filter, find_options).await?;
+  let mut cursor = user_collection.find(filter, find_options).await?;
 
-    while let Some(user_found) = cursor.try_next().await? {
-        user = user_found;
-    }
+  while let Some(user_found) = cursor.try_next().await? {
+    user = user_found;
+  }
 
-    Ok(user)
+  Ok(user)
 }
 
 ///
@@ -104,41 +100,37 @@ pub async fn get_user(user_email: &str) -> Result<User, mongodb::error::Error> {
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-///
 pub async fn create_user(user_builder: UserBuilder) -> Result<User, mongodb::error::Error> {
-    let client = get_client().await?;
+  let client = get_client().await?;
 
-    let db = client.database("data");
-    let user_collection = db.collection::<User>("users");
+  let db = client.database("data");
+  let user_collection = db.collection::<User>("users");
 
-    let user_id = user_collection
-        .insert_one(user_builder.clone().build(), None)
-        .await?
-        .inserted_id
-        .as_object_id()
-        .unwrap_or_else(|| ObjectId::default());
+  let user_id = user_collection
+    .insert_one(user_builder.clone().build(), None)
+    .await?
+    .inserted_id
+    .as_object_id()
+    .unwrap_or_else(|| ObjectId::default());
 
-    let user = user_builder.with_id(user_id).build();
+  let user = user_builder.with_id(user_id).build();
 
-    Ok(user)
+  Ok(user)
 }
 
 async fn get_client() -> Result<Client, mongodb::error::Error> {
-    dotenv::dotenv().ok();
+  dotenv::dotenv().ok();
 
-    let connection_string = match dotenv::var("MONGO_STR") {
-        Ok(value) => value,
-        Err(e) => {
-            panic!(
-                "Error getting MongoDB connection string (MONGO_STR): {:?}",
-                e
-            );
-        }
-    };
+  let connection_string = match dotenv::var("MONGO_STR") {
+    Ok(value) => value,
+    Err(e) => {
+      panic!("Error getting MongoDB connection string (MONGO_STR): {:?}", e);
+    }
+  };
 
-    let client_options = ClientOptions::parse(connection_string).await?;
+  let client_options = ClientOptions::parse(connection_string).await?;
 
-    let client = Client::with_options(client_options)?;
+  let client = Client::with_options(client_options)?;
 
-    Ok(client)
+  Ok(client)
 }
