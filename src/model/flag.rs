@@ -26,6 +26,18 @@ pub struct FeatureFlag {
     pub release_type: ReleaseType,
 }
 
+impl Default for FeatureFlag {
+    fn default() -> FeatureFlag {
+        FeatureFlag {
+            id: ObjectId::default(),
+            name: "default_flag".to_string(),
+            enabled: false,
+            client_toggle: false,
+            release_type: ReleaseType::Global,
+        }
+    }
+}
+
 impl FeatureFlag {
     pub fn evaluate(&self, user: Option<&str>) -> bool {
 
@@ -85,18 +97,6 @@ impl FeatureFlag {
         }
 
         false
-    }
-}
-
-impl Default for FeatureFlag {
-    fn default() -> FeatureFlag {
-        FeatureFlag {
-            id: ObjectId::default(),
-            name: "default_flag".to_string(),
-            enabled: false,
-            client_toggle: false,
-            release_type: ReleaseType::Global,
-        }
     }
 }
 
