@@ -6,14 +6,19 @@ extern crate rocket;
 mod controller;
 mod model;
 
+use std::collections::HashMap;
+
 use controller::database::ConnectionManager;
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use rocket::State;
+use rocket::http::{CookieJar, Cookie};
 
 use model::user::{User, UserBuilder};
 
 const FLAG_TRUE: &str = "1";
 const FLAG_FALSE: &str = "0";
+const AUTH_TOKEN: &str = "auth_token";
 
 #[get("/")]
 async fn index() -> String {
@@ -54,7 +59,7 @@ async fn check(product: &str, feature: &str, database_connection: &State<Connect
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
-async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>) -> String {
+async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>, jar: &CookieJar<'_>) -> String {
   let user_builder = User::builder()
     .with_name(name)
     .with_email(email)
@@ -72,5 +77,30 @@ async fn create_user(name: &str, email: &str, hash: &str, database_connection: &
 fn rocket() -> _ {
   rocket::build()
     .manage(ConnectionManager::new())
-    .mount("/", routes![index, check, check_with_user])
+    .mount("/", routes![index, check, check_with_user, create_user])
+}
+
+struct AuthTokens {
+  user_tokens: HashMap<ObjectId, String>,
+}
+
+impl AuthTokens {
+  pub fn check_for(&self, user_id: ObjectId, token: String) -> bool {
+    match self.user_tokens.get(&user_id) {
+      Some(value) => {
+        value == &token
+      }
+      None => false
+    }
+  }
+}
+
+async fn authenticate_token(jar: &CookieJar<'_>) -> bool {
+  match jar.get(AUTH_TOKEN) {
+    Some(auth_token) => {
+
+    }
+    None => {}
+  }
+  false
 }
