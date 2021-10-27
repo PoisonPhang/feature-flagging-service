@@ -1,4 +1,3 @@
-//!
 //! Data model for the Feature Flagging Service
 
 pub mod flag;

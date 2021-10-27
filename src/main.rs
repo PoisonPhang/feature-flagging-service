@@ -1,23 +1,24 @@
-//!
 //! Currently being used for testing
+
 #[macro_use]
 extern crate rocket;
 
 mod controller;
 mod model;
 
-use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
-use controller::database::ConnectionManager;
 use mongodb::bson::doc;
-use mongodb::bson::oid::ObjectId;
 use rocket::State;
 use rocket::http::{CookieJar, Cookie};
 
-use model::user::{User, UserBuilder};
+use controller::database::ConnectionManager;
+use controller::UserAuth;
+use model::user::User;
 
 const FLAG_TRUE: &str = "1";
 const FLAG_FALSE: &str = "0";
+const USER_ID: &str = "user_id";
 const AUTH_TOKEN: &str = "auth_token";
 
 #[get("/")]
@@ -73,34 +74,33 @@ async fn create_user(name: &str, email: &str, hash: &str, database_connection: &
   format!("User {} created with id {}", user.name, user.id)
 }
 
+#[get("/login/<email>/<hash>")]
+async fn login(email: &str, hash: &str, database_connection: &State<ConnectionManager>, auth_tokens_mut: &State<Arc<Mutex<UserAuth::AuthTokens>>>, jar: & CookieJar<'_>) -> String {
+  let user = match database_connection.get_user(email).await {
+    Some(value) => value,
+    None => return format!("User {} not found", email)
+  };
+
+  if user.password_hash == hash {
+
+    let mut auth_tokens = match auth_tokens_mut.lock() {
+      Ok(value) => value,
+      Err(poisoned) => poisoned.into_inner(), // recover from poisoned mutex
+    };
+
+    jar.add(Cookie::new(USER_ID, user.id.to_hex()));
+    jar.add(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(user.id)));
+
+    return format!("Login success")
+  }
+
+  "Incorrect password".to_string()
+}
+
 #[launch]
 fn rocket() -> _ {
   rocket::build()
     .manage(ConnectionManager::new())
-    .mount("/", routes![index, check, check_with_user, create_user])
-}
-
-struct AuthTokens {
-  user_tokens: HashMap<ObjectId, String>,
-}
-
-impl AuthTokens {
-  pub fn check_for(&self, user_id: ObjectId, token: String) -> bool {
-    match self.user_tokens.get(&user_id) {
-      Some(value) => {
-        value == &token
-      }
-      None => false
-    }
-  }
-}
-
-async fn authenticate_token(jar: &CookieJar<'_>) -> bool {
-  match jar.get(AUTH_TOKEN) {
-    Some(auth_token) => {
-
-    }
-    None => {}
-  }
-  false
+    .manage(Arc::new(Mutex::new(UserAuth::AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
+    .mount("/", routes![index, check, check_with_user, create_user, login])
 }

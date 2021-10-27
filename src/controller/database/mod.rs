@@ -1,6 +1,4 @@
-//!
 //! Database connection usage and management
-//! 
 
 use dotenv;
 
@@ -14,18 +12,14 @@ enum ConnectionType {
   MongoDB,
 }
 
-///
 /// Manager for database connections
-/// 
 pub struct ConnectionManager {
   /// Type of the database driver
   connection_type: ConnectionType,
 }
 
 impl ConnectionManager {
-  ///
   /// Constructs and returns a new `ConnectionManager`
-  /// 
   pub fn new() -> ConnectionManager {
     let connection_type = match dotenv::var("DATABASE_CONNECTION_TYPE") {
       Ok(value) => match value.as_str() {
@@ -46,11 +40,9 @@ impl ConnectionManager {
     ConnectionManager { connection_type }
   }
 
-  ///
   /// Given a product name, returns a fully constructed `Product` from the database
   /// 
   /// Returns `Product` inside of an `Option<Product>`. If anything goes wrong, this function will return `None`
-  /// 
   pub async fn get_product(&self, product_name: &str) -> Option<Product> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::mongo::get_product(product_name).await {
@@ -66,11 +58,9 @@ impl ConnectionManager {
     }
   }
 
-  ///
   /// Given a product id, and flag name, returns a fully constructed `FeatureFlag`
   /// 
   /// Returns `FeatureFlag` inside of an `Option<FeatureFlag>`. If anything goes wrong, this function will return `None`
-  /// 
   pub async fn get_feature_flag(&self, product: &str, flag_name: &str) -> Option<FeatureFlag> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::mongo::get_feature_flag(product, flag_name).await {
@@ -86,11 +76,9 @@ impl ConnectionManager {
     }
   }
 
-  ///
   /// Given a product id, and flag name, returns a fully constructed `User`
   /// 
   /// Returns `User` inside of an `Option<User>`. If anything goes wrong, this function will return `None`
-  /// 
   pub async fn get_user(&self, user_email: &str) -> Option<User> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::mongo::get_user(user_email).await {
@@ -106,11 +94,9 @@ impl ConnectionManager {
     }
   }
 
-  ///
   /// Creates a user from a given `UserBuilder`
   /// 
   /// It's expected that all values besides `UserBuilder.id` are set. `UserBuilder.id` will be set by the database
-  /// 
   pub async fn create_user(&self, user_builder: UserBuilder) -> Option<User> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::mongo::create_user(user_builder).await {

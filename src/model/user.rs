@@ -1,11 +1,9 @@
-//!
 //! Data model for Users
 
 use mongodb::bson::oid::ObjectId;
 
 use serde::{Deserialize, Serialize};
 
-///
 /// Data object for users
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
@@ -63,7 +61,6 @@ impl Default for UserBuilder {
 }
 
 impl UserBuilder {
-  ///
   /// Creates a new `UserBuilder` with default fields from `UserBuilder::default()`
   fn new() -> UserBuilder {
     UserBuilder::default()
@@ -89,7 +86,6 @@ impl UserBuilder {
     self
   }
 
-  ///
   /// Builds itself into and returns a `User` consuming the `UserBuilder`
   ///
   /// # Examples

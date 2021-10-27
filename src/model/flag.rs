@@ -1,4 +1,3 @@
-//!
 //! Data model structures of the Feature Flag
 
 use std::collections::HashMap;
@@ -7,7 +6,6 @@ use mongodb::bson::oid::ObjectId;
 
 use serde::{Deserialize, Serialize};
 
-///
 /// Data Object for a Feature Flag
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
@@ -158,8 +156,6 @@ impl FeatureFlagBuilder {
   }
 }
 
-///
-/// # ReleaseType
 /// Data object for a Feature Flag Release Type
 ///
 /// Release types contain relevant information to the type of release

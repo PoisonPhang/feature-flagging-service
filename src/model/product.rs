@@ -1,4 +1,3 @@
-//!
 //! Data model for Products
 
 use std::vec::Vec;
@@ -7,7 +6,6 @@ use mongodb::bson::oid::ObjectId;
 
 use serde::{Deserialize, Serialize};
 
-///
 /// Data object for products
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Product {
