@@ -13,7 +13,7 @@ use rocket::State;
 use rocket::http::{CookieJar, Cookie};
 
 use controller::database::ConnectionManager;
-use controller::UserAuth;
+use controller::authentication;
 use model::user::User;
 
 const FLAG_TRUE: &str = "1";
@@ -60,7 +60,9 @@ async fn check(product: &str, feature: &str, database_connection: &State<Connect
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
-async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>, jar: &CookieJar<'_>) -> String {
+async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>, auth_tokens_mut: &State<Arc<Mutex<authentication::AuthTokens>>>, jar: &CookieJar<'_>) -> String {
+  
+
   let user_builder = User::builder()
     .with_name(name)
     .with_email(email)
@@ -75,7 +77,7 @@ async fn create_user(name: &str, email: &str, hash: &str, database_connection: &
 }
 
 #[get("/login/<email>/<hash>")]
-async fn login(email: &str, hash: &str, database_connection: &State<ConnectionManager>, auth_tokens_mut: &State<Arc<Mutex<UserAuth::AuthTokens>>>, jar: & CookieJar<'_>) -> String {
+async fn login(email: &str, hash: &str, database_connection: &State<ConnectionManager>, auth_tokens_mut: &State<Arc<Mutex<authentication::AuthTokens>>>, jar: & CookieJar<'_>) -> String {
   let user = match database_connection.get_user(email).await {
     Some(value) => value,
     None => return format!("User {} not found", email)
@@ -88,8 +90,9 @@ async fn login(email: &str, hash: &str, database_connection: &State<ConnectionMa
       Err(poisoned) => poisoned.into_inner(), // recover from poisoned mutex
     };
 
-    jar.add(Cookie::new(USER_ID, user.id.to_hex()));
-    jar.add(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(user.id)));
+    // Add cookies for user id and authentication token to request
+    jar.add_private(Cookie::new(USER_ID, user.id.to_hex()));
+    jar.add_private(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(user.id)));
 
     return format!("Login success")
   }
@@ -101,6 +104,6 @@ async fn login(email: &str, hash: &str, database_connection: &State<ConnectionMa
 fn rocket() -> _ {
   rocket::build()
     .manage(ConnectionManager::new())
-    .manage(Arc::new(Mutex::new(UserAuth::AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
+    .manage(Arc::new(Mutex::new(authentication::AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
     .mount("/", routes![index, check, check_with_user, create_user, login])
 }
