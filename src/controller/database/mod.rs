@@ -41,7 +41,7 @@ impl ConnectionManager {
   }
 
   /// Given a product name, returns a fully constructed `Product` from the database
-  /// 
+  ///
   /// Returns `Product` inside of an `Option<Product>`. If anything goes wrong, this function will return `None`
   pub async fn get_product(&self, product_name: &str) -> Option<Product> {
     match &self.connection_type {
@@ -59,7 +59,7 @@ impl ConnectionManager {
   }
 
   /// Given a product id, and flag name, returns a fully constructed `FeatureFlag`
-  /// 
+  ///
   /// Returns `FeatureFlag` inside of an `Option<FeatureFlag>`. If anything goes wrong, this function will return `None`
   pub async fn get_feature_flag(&self, product: &str, flag_name: &str) -> Option<FeatureFlag> {
     match &self.connection_type {
@@ -77,7 +77,7 @@ impl ConnectionManager {
   }
 
   /// Given a product id, and flag name, returns a fully constructed `User`
-  /// 
+  ///
   /// Returns `User` inside of an `Option<User>`. If anything goes wrong, this function will return `None`
   pub async fn get_user(&self, user_email: &str) -> Option<User> {
     match &self.connection_type {
@@ -95,7 +95,7 @@ impl ConnectionManager {
   }
 
   /// Creates a user from a given `UserBuilder`
-  /// 
+  ///
   /// It's expected that all values besides `UserBuilder.id` are set. `UserBuilder.id` will be set by the database
   pub async fn create_user(&self, user_builder: UserBuilder) -> Option<User> {
     match &self.connection_type {

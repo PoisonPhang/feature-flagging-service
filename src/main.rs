@@ -9,11 +9,11 @@ mod model;
 use std::sync::{Arc, Mutex};
 
 use mongodb::bson::doc;
+use rocket::http::{Cookie, CookieJar};
 use rocket::State;
-use rocket::http::{CookieJar, Cookie};
 
-use controller::database::ConnectionManager;
 use controller::authentication;
+use controller::database::ConnectionManager;
 use model::user::User;
 
 const FLAG_TRUE: &str = "1";
@@ -46,9 +46,13 @@ async fn check(
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
-async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>, _token_auth: authentication::UserAuth) -> String {
-  
-
+async fn create_user(
+  name: &str,
+  email: &str,
+  hash: &str,
+  database_connection: &State<ConnectionManager>,
+  _token_auth: authentication::UserAuth,
+) -> String {
   let user_builder = User::builder()
     .with_name(name)
     .with_email(email)
@@ -63,14 +67,19 @@ async fn create_user(name: &str, email: &str, hash: &str, database_connection: &
 }
 
 #[get("/login/<email>/<hash>")]
-async fn login(email: &str, hash: &str, database_connection: &State<ConnectionManager>, auth_tokens_mut: &State<Arc<Mutex<authentication::AuthTokens>>>, jar: & CookieJar<'_>) -> String {
+async fn login(
+  email: &str,
+  hash: &str,
+  database_connection: &State<ConnectionManager>,
+  auth_tokens_mut: &State<Arc<Mutex<authentication::AuthTokens>>>,
+  jar: &CookieJar<'_>,
+) -> String {
   let user = match database_connection.get_user(email).await {
     Some(value) => value,
-    None => return format!("User {} not found", email)
+    None => return format!("User {} not found", email),
   };
 
   if user.password_hash == hash {
-
     let mut auth_tokens = match auth_tokens_mut.lock() {
       Ok(value) => value,
       Err(poisoned) => poisoned.into_inner(), // recover from poisoned mutex
@@ -80,7 +89,7 @@ async fn login(email: &str, hash: &str, database_connection: &State<ConnectionMa
     jar.add_private(Cookie::new(USER_ID, user.id.to_hex()));
     jar.add_private(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(user.id)));
 
-    return format!("Login success")
+    return format!("Login success");
   }
 
   "Incorrect password".to_string()
