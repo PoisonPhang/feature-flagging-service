@@ -26,30 +26,16 @@ async fn index() -> String {
   format!("Not 404, we just don't have a page yet")
 }
 
-#[get("/check/<product>/<feature>/<user>")]
-async fn check_with_user(
+#[get("/check/<product>/<feature>/with?<user>")]
+async fn check(
   product: &str,
   feature: &str,
-  user: &str,
+  user: Option<&str>,
   database_connection: &State<ConnectionManager>,
 ) -> String {
   match database_connection.get_feature_flag(product, feature).await {
     Some(response) => {
-      if response.evaluate(Some(user)) {
-        return FLAG_TRUE.to_string();
-      }
-    }
-    None => return FLAG_TRUE.to_string(),
-  }
-
-  FLAG_FALSE.to_string()
-}
-
-#[get("/check/<product>/<feature>")]
-async fn check(product: &str, feature: &str, database_connection: &State<ConnectionManager>) -> String {
-  match database_connection.get_feature_flag(product, feature).await {
-    Some(response) => {
-      if response.evaluate(None) {
+      if response.evaluate(user) {
         return FLAG_TRUE.to_string();
       }
     }
@@ -60,7 +46,7 @@ async fn check(product: &str, feature: &str, database_connection: &State<Connect
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
-async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>, auth_tokens_mut: &State<Arc<Mutex<authentication::AuthTokens>>>, jar: &CookieJar<'_>) -> String {
+async fn create_user(name: &str, email: &str, hash: &str, database_connection: &State<ConnectionManager>, _token_auth: authentication::UserAuth) -> String {
   
 
   let user_builder = User::builder()
@@ -105,5 +91,5 @@ fn rocket() -> _ {
   rocket::build()
     .manage(ConnectionManager::new())
     .manage(Arc::new(Mutex::new(authentication::AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
-    .mount("/", routes![index, check, check_with_user, create_user, login])
+    .mount("/", routes![index, check, create_user, login])
 }
