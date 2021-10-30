@@ -35,6 +35,9 @@ impl Default for FeatureFlag {
 }
 
 impl FeatureFlag {
+  pub fn builder() -> FeatureFlagBuilder {
+    FeatureFlagBuilder::default()
+  }
   pub fn evaluate(&self, user: Option<&str>) -> bool {
     // If no user is provided, only evaluate Global release type as potentially true
     let user = match user {
@@ -88,7 +91,7 @@ impl FeatureFlag {
 }
 
 #[derive(Clone)]
-struct FeatureFlagBuilder {
+pub struct FeatureFlagBuilder {
   /// ObjectID generated my MongoDB
   pub id: ObjectId,
   /// Flag Name
@@ -125,8 +128,8 @@ impl FeatureFlagBuilder {
     self
   }
 
-  pub fn with_name(mut self, name: String) -> FeatureFlagBuilder {
-    self.name = name;
+  pub fn with_name(mut self, name: &str) -> FeatureFlagBuilder {
+    self.name = name.to_string();
     self
   }
 

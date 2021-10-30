@@ -7,7 +7,7 @@ use mongodb::bson::oid::ObjectId;
 use mongodb::options::{ClientOptions, FindOptions};
 use mongodb::Client;
 
-use crate::model::flag::FeatureFlag;
+use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
 use crate::model::product::Product;
 use crate::model::user::{User, UserBuilder};
 
@@ -87,6 +87,24 @@ pub async fn get_user(user_email: &str) -> Result<User, mongodb::error::Error> {
   }
 
   Ok(user)
+}
+
+pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> Result<FeatureFlag, mongodb::error::Error> {
+  let client = get_client().await?;
+
+  let db = client.database("data");
+  let features_collection = db.collection::<FeatureFlag>("features");
+
+  let flag_id = features_collection
+    .insert_one(flag_builder.clone().build(), None)
+    .await?
+    .inserted_id
+    .as_object_id()
+    .unwrap_or_else(|| ObjectId::default());
+
+  let flag = flag_builder.with_id(flag_id).build();
+
+  Ok(flag)
 }
 
 /// Given a `UserBuilder`, this will attempt to create a new `User` and insert them into the database.

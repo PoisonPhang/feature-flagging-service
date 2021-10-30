@@ -2,7 +2,7 @@
 
 use dotenv;
 
-use crate::model::flag::FeatureFlag;
+use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
 use crate::model::product::Product;
 use crate::model::user::{User, UserBuilder};
 
@@ -94,6 +94,18 @@ impl ConnectionManager {
     }
   }
 
+  pub async fn create_flag(&self, flag_builder: FeatureFlagBuilder) -> Option<FeatureFlag> {
+    match &self.connection_type {
+      ConnectionType::MongoDB => match mongo::mongo::create_flag(flag_builder).await {
+        Ok(value) => return Some(value),
+        Err(e) => {
+          print!("Error creating flag. Returning Option::None. Error {:?}", e);
+          return None
+        }
+      }
+    }
+  }
+
   /// Creates a user from a given `UserBuilder`
   ///
   /// It's expected that all values besides `UserBuilder.id` are set. `UserBuilder.id` will be set by the database
@@ -103,7 +115,7 @@ impl ConnectionManager {
         Ok(value) => return Some(value),
         Err(e) => {
           print!("Error creating user. Returning Option::None. Error {:?}", e);
-          return None;
+          return None
         }
       },
     }
