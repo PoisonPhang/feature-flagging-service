@@ -100,9 +100,9 @@ impl ConnectionManager {
         Ok(value) => return Some(value),
         Err(e) => {
           print!("Error creating flag. Returning Option::None. Error {:?}", e);
-          return None
+          return None;
         }
-      }
+      },
     }
   }
 
@@ -115,7 +115,7 @@ impl ConnectionManager {
         Ok(value) => return Some(value),
         Err(e) => {
           print!("Error creating user. Returning Option::None. Error {:?}", e);
-          return None
+          return None;
         }
       },
     }

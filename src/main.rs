@@ -10,8 +10,8 @@ use std::sync::{Arc, Mutex};
 
 use mongodb::bson::doc;
 use rocket::http::{Cookie, CookieJar};
-use rocket::State;
 use rocket::serde::json::Json;
+use rocket::State;
 
 use controller::authentication;
 use controller::database::ConnectionManager;
@@ -47,20 +47,27 @@ async fn check(
   FLAG_FALSE.to_string()
 }
 
-#[post("/create/flag/<name>/<enabled>/<client_toggle>", data="<release_type>")]
-async fn create_flag(name: &str, enabled: bool, client_toggle: bool, release_type: Json<ReleaseType>,  database_connection: &State<ConnectionManager>,_token_auth: authentication::UserAuth) -> String {
+#[post("/create/flag/<name>/<enabled>/<client_toggle>", data = "<release_type>")]
+async fn create_flag(
+  name: &str,
+  enabled: bool,
+  client_toggle: bool,
+  release_type: Json<ReleaseType>,
+  database_connection: &State<ConnectionManager>,
+  _token_auth: authentication::UserAuth,
+) -> String {
   let flag_builder = FeatureFlag::builder()
     .with_name(name)
     .with_enabled(enabled)
     .with_client_toggle(client_toggle)
     .with_release_type(release_type.into_inner());
 
-    let flag = match database_connection.create_flag().await {
-      Some(value) => value,
-      None => return format!("Failed to create flag: {}", name),
-    };
+  let flag = match database_connection.create_flag(flag_builder).await {
+    Some(value) => value,
+    None => return format!("Failed to create flag: {}", name),
+  };
 
-    "".to_string()
+  "".to_string()
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
