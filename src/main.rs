@@ -67,7 +67,7 @@ async fn create_flag(
     None => return format!("Failed to create flag: {}", name),
   };
 
-  "".to_string()
+  format!("Created flag with {} with id {}", name, flag.id)
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
