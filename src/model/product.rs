@@ -71,8 +71,8 @@ impl ProductBuilder {
     self
   }
 
-  pub fn with_name(mut self, name: String) -> ProductBuilder {
-    self.name = name;
+  pub fn with_name(mut self, name: &str) -> ProductBuilder {
+    self.name = name.to_string();
     self
   }
 

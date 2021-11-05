@@ -9,6 +9,7 @@ mod model;
 use std::sync::{Arc, Mutex};
 
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use rocket::http::{Cookie, CookieJar};
 use rocket::serde::json::Json;
 use rocket::State;
@@ -16,6 +17,7 @@ use rocket::State;
 use controller::authentication;
 use controller::database::ConnectionManager;
 use model::flag::{FeatureFlag, ReleaseType};
+use model::product::Product;
 use model::user::User;
 
 const FLAG_TRUE: &str = "1";
@@ -47,6 +49,23 @@ async fn check(
   FLAG_FALSE.to_string()
 }
 
+#[post("/create/product/<name>", data = "<users>")]
+async fn create_product(
+  name: &str,
+  users: Json<Vec<ObjectId>>,
+  database_connection: &State<ConnectionManager>,
+  _token_auth: authentication::UserAuth,
+) -> String {
+  let product_builder = Product::builder().with_name(name).with_users(users.into_inner());
+
+  let product = match database_connection.create_product(product_builder).await {
+    Some(value) => value,
+    None => return format!("Failed to create product: {}", name),
+  };
+
+  format!("Created product {} with id {}", name, product.id)
+}
+
 #[post("/create/flag/<name>/<enabled>/<client_toggle>", data = "<release_type>")]
 async fn create_flag(
   name: &str,
@@ -67,7 +86,7 @@ async fn create_flag(
     None => return format!("Failed to create flag: {}", name),
   };
 
-  format!("Created flag with {} with id {}", name, flag.id)
+  format!("Created flag {} with id {}", name, flag.id)
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
@@ -125,5 +144,8 @@ fn rocket() -> _ {
   rocket::build()
     .manage(ConnectionManager::new())
     .manage(Arc::new(Mutex::new(authentication::AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
-    .mount("/", routes![index, check, create_flag, create_user, login])
+    .mount(
+      "/",
+      routes![index, check, create_product, create_flag, create_user, login],
+    )
 }

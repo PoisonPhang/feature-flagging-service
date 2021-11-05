@@ -3,7 +3,7 @@
 use dotenv;
 
 use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
-use crate::model::product::Product;
+use crate::model::product::{Product, ProductBuilder};
 use crate::model::user::{User, UserBuilder};
 
 pub mod mongo;
@@ -31,7 +31,7 @@ impl ConnectionManager {
       },
       Err(e) => {
         panic!(
-          "Unrecoverable error. Error reading 'DATABASE_CONNECTION_TYPE' from '.env': {:?}",
+          "\nUnrecoverable error. Error reading 'DATABASE_CONNECTION_TYPE' from '.env': {:?}\n",
           e
         )
       }
@@ -45,10 +45,10 @@ impl ConnectionManager {
   /// Returns `Product` inside of an `Option<Product>`. If anything goes wrong, this function will return `None`
   pub async fn get_product(&self, product_name: &str) -> Option<Product> {
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::mongo::get_product(product_name).await {
+      ConnectionType::MongoDB => match mongo::get_product(product_name).await {
         Ok(value) => return Some(value),
         Err(e) => {
-          print!(
+          println!(
             "Error getting product '{}'. Returning Option::None. Error {:?}",
             product_name, e
           );
@@ -63,10 +63,10 @@ impl ConnectionManager {
   /// Returns `FeatureFlag` inside of an `Option<FeatureFlag>`. If anything goes wrong, this function will return `None`
   pub async fn get_feature_flag(&self, product: &str, flag_name: &str) -> Option<FeatureFlag> {
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::mongo::get_feature_flag(product, flag_name).await {
+      ConnectionType::MongoDB => match mongo::get_feature_flag(product, flag_name).await {
         Ok(value) => return Some(value),
         Err(e) => {
-          print!(
+          println!(
             "Error getting feature '{}'. Returning Option::None. Error: {:?}",
             flag_name, e
           );
@@ -81,10 +81,10 @@ impl ConnectionManager {
   /// Returns `User` inside of an `Option<User>`. If anything goes wrong, this function will return `None`
   pub async fn get_user(&self, user_email: &str) -> Option<User> {
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::mongo::get_user(user_email).await {
+      ConnectionType::MongoDB => match mongo::get_user(user_email).await {
         Ok(value) => return Some(value),
         Err(e) => {
-          print!(
+          println!(
             "Error getting user from email '{}'. Returning Option::None. Error: {:?}",
             user_email, e
           );
@@ -94,12 +94,24 @@ impl ConnectionManager {
     }
   }
 
-  pub async fn create_flag(&self, flag_builder: FeatureFlagBuilder) -> Option<FeatureFlag> {
+  pub async fn create_product(&self, product_builder: ProductBuilder) -> Option<Product> {
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::mongo::create_flag(flag_builder).await {
+      ConnectionType::MongoDB => match mongo::create_product(product_builder).await {
         Ok(value) => return Some(value),
         Err(e) => {
-          print!("Error creating flag. Returning Option::None. Error {:?}", e);
+          println!("Error creating product. Returning Option::None. Error {:?}", e);
+          return None;
+        }
+      },
+    }
+  }
+
+  pub async fn create_flag(&self, flag_builder: FeatureFlagBuilder) -> Option<FeatureFlag> {
+    match &self.connection_type {
+      ConnectionType::MongoDB => match mongo::create_flag(flag_builder).await {
+        Ok(value) => return Some(value),
+        Err(e) => {
+          println!("Error creating flag. Returning Option::None. Error {:?}", e);
           return None;
         }
       },
@@ -111,10 +123,10 @@ impl ConnectionManager {
   /// It's expected that all values besides `UserBuilder.id` are set. `UserBuilder.id` will be set by the database
   pub async fn create_user(&self, user_builder: UserBuilder) -> Option<User> {
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::mongo::create_user(user_builder).await {
+      ConnectionType::MongoDB => match mongo::create_user(user_builder).await {
         Ok(value) => return Some(value),
         Err(e) => {
-          print!("Error creating user. Returning Option::None. Error {:?}", e);
+          println!("Error creating user. Returning Option::None. Error {:?}", e);
           return None;
         }
       },
