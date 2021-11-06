@@ -11,12 +11,13 @@ use std::sync::{Arc, Mutex};
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use rocket::http::{Cookie, CookieJar};
+use rocket::response::status;
 use rocket::serde::json::Json;
 use rocket::State;
 
 use controller::authentication::{AuthTokens, UserAuth};
 use controller::database::ConnectionManager;
-use controller::response::FlagCheck;
+use controller::response::{Created, FlagCheck};
 use model::flag::{FeatureFlag, ReleaseType};
 use model::product::Product;
 use model::user::User;
@@ -54,15 +55,15 @@ async fn create_product(
   users: Json<Vec<ObjectId>>,
   database_connection: &State<ConnectionManager>,
   _token_auth: UserAuth,
-) -> String {
+) -> Result<status::Created<Json<Created>>, status::BadRequest<()>> {
   let product_builder = Product::builder().with_name(name).with_users(users.into_inner());
 
   let product = match database_connection.create_product(product_builder).await {
     Some(value) => value,
-    None => return format!("Failed to create product: {}", name),
+    None => return Err(status::BadRequest(None)),
   };
 
-  format!("Created product {} with id {}", name, product.id)
+  Ok(status::Created::new("").body(Json(Created::new(product.id))))
 }
 
 #[post("/create/flag/<name>/<enabled>/<client_toggle>", data = "<release_type>")]
@@ -73,7 +74,7 @@ async fn create_flag(
   release_type: Json<ReleaseType>,
   database_connection: &State<ConnectionManager>,
   _token_auth: UserAuth,
-) -> String {
+) -> Result<status::Created<Json<Created>>, status::BadRequest<()>> {
   let flag_builder = FeatureFlag::builder()
     .with_name(name)
     .with_enabled(enabled)
@@ -82,10 +83,10 @@ async fn create_flag(
 
   let flag = match database_connection.create_flag(flag_builder).await {
     Some(value) => value,
-    None => return format!("Failed to create flag: {}", name),
+    None => return Err(status::BadRequest(None)),
   };
 
-  format!("Created flag {} with id {}", name, flag.id)
+  Ok(status::Created::new("").body(Json(Created::new(flag.id))))
 }
 
 #[post("/create/user/<name>/<email>/<hash>")]
@@ -95,7 +96,7 @@ async fn create_user(
   hash: &str,
   database_connection: &State<ConnectionManager>,
   _token_auth: UserAuth,
-) -> String {
+) -> Result<status::Created<Json<Created>>, status::BadRequest<()>> {
   let user_builder = User::builder()
     .with_name(name)
     .with_email(email)
@@ -103,10 +104,10 @@ async fn create_user(
 
   let user = match database_connection.create_user(user_builder).await {
     Some(value) => value,
-    None => return format!("Failed to create user: {}", name),
+    None => return Err(status::BadRequest(None)),
   };
 
-  format!("User {} created with id {}", user.name, user.id)
+  Ok(status::Created::new("").body(Json(Created::new(user.id))))
 }
 
 #[get("/login/<email>/<hash>")]
@@ -116,10 +117,10 @@ async fn login(
   database_connection: &State<ConnectionManager>,
   auth_tokens_mut: &State<Arc<Mutex<AuthTokens>>>,
   jar: &CookieJar<'_>,
-) -> String {
+) -> Result<status::Accepted<()>, status::BadRequest<String>> {
   let user = match database_connection.get_user(email).await {
     Some(value) => value,
-    None => return format!("User {} not found", email),
+    None => return Err(status::BadRequest(Some(format!("User {} not found", email)))),
   };
 
   if user.password_hash == hash {
@@ -132,10 +133,10 @@ async fn login(
     jar.add_private(Cookie::new(USER_ID, user.id.to_hex()));
     jar.add_private(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(user.id)));
 
-    return format!("Login success");
+    return Ok(status::Accepted(None))
   }
 
-  "Incorrect password".to_string()
+  Err(status::BadRequest(Some("Incorrect password".to_string())))
 }
 
 #[launch]
