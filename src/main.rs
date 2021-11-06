@@ -14,14 +14,13 @@ use rocket::http::{Cookie, CookieJar};
 use rocket::serde::json::Json;
 use rocket::State;
 
-use controller::authentication;
+use controller::authentication::{AuthTokens, UserAuth};
 use controller::database::ConnectionManager;
+use controller::response::FlagCheck;
 use model::flag::{FeatureFlag, ReleaseType};
 use model::product::Product;
 use model::user::User;
 
-const FLAG_TRUE: &str = "1";
-const FLAG_FALSE: &str = "0";
 const USER_ID: &str = "user_id";
 const AUTH_TOKEN: &str = "auth_token";
 
@@ -36,17 +35,17 @@ async fn check(
   feature: &str,
   user: Option<&str>,
   database_connection: &State<ConnectionManager>,
-) -> String {
+) -> Option<Json<FlagCheck>> {
   match database_connection.get_feature_flag(product, feature).await {
     Some(response) => {
       if response.evaluate(user) {
-        return FLAG_TRUE.to_string();
+        return FlagCheck::get_enabled().await;
       }
     }
-    None => return FLAG_TRUE.to_string(),
+    None => return None,
   }
 
-  FLAG_FALSE.to_string()
+  FlagCheck::get_disabled().await
 }
 
 #[post("/create/product/<name>", data = "<users>")]
@@ -54,7 +53,7 @@ async fn create_product(
   name: &str,
   users: Json<Vec<ObjectId>>,
   database_connection: &State<ConnectionManager>,
-  _token_auth: authentication::UserAuth,
+  _token_auth: UserAuth,
 ) -> String {
   let product_builder = Product::builder().with_name(name).with_users(users.into_inner());
 
@@ -73,7 +72,7 @@ async fn create_flag(
   client_toggle: bool,
   release_type: Json<ReleaseType>,
   database_connection: &State<ConnectionManager>,
-  _token_auth: authentication::UserAuth,
+  _token_auth: UserAuth,
 ) -> String {
   let flag_builder = FeatureFlag::builder()
     .with_name(name)
@@ -95,7 +94,7 @@ async fn create_user(
   email: &str,
   hash: &str,
   database_connection: &State<ConnectionManager>,
-  _token_auth: authentication::UserAuth,
+  _token_auth: UserAuth,
 ) -> String {
   let user_builder = User::builder()
     .with_name(name)
@@ -115,7 +114,7 @@ async fn login(
   email: &str,
   hash: &str,
   database_connection: &State<ConnectionManager>,
-  auth_tokens_mut: &State<Arc<Mutex<authentication::AuthTokens>>>,
+  auth_tokens_mut: &State<Arc<Mutex<AuthTokens>>>,
   jar: &CookieJar<'_>,
 ) -> String {
   let user = match database_connection.get_user(email).await {
@@ -143,7 +142,7 @@ async fn login(
 fn rocket() -> _ {
   rocket::build()
     .manage(ConnectionManager::new())
-    .manage(Arc::new(Mutex::new(authentication::AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
+    .manage(Arc::new(Mutex::new(AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
     .mount(
       "/",
       routes![index, check, create_product, create_flag, create_user, login],
