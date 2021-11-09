@@ -154,7 +154,7 @@ fn rocket() -> _ {
       openapi_get_routes![index, check, create_product, create_flag, create_user, login],
     )
     .mount(
-      "swagger-ui",
+      "/swagger-ui/",
       make_swagger_ui(&SwaggerUIConfig {
         url: "../openapi.json".to_string(),
         ..Default::default()
