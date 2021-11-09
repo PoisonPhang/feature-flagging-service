@@ -21,6 +21,7 @@ pub enum UserAuthError {
   Invalid,
 }
 
+/// Custom rocket request guard for request where cookie based user authentication is required
 pub struct UserAuth;
 
 #[rocket::async_trait]

@@ -30,6 +30,9 @@ async fn index() -> String {
   format!("Not 404, we just don't have a page yet")
 }
 
+/// Checks a product's flag to see if it is enabled
+/// 
+/// Optionally can provide a user for flags that use limited/percentage release
 #[openapi(tag = "Flags")]
 #[get("/check/<product>/<feature>/with?<user>")]
 async fn check(
@@ -50,6 +53,9 @@ async fn check(
   FlagCheck::get_disabled().await
 }
 
+/// Create a product with a given name
+/// 
+/// Can provide a list of initial users (by user ID) for the product
 #[openapi(tag = "Products")]
 #[post("/create/product/<name>", data = "<users>")]
 async fn create_product(
@@ -68,6 +74,11 @@ async fn create_product(
   Ok(status::Created::new("").body(Json(Created::new(&product.id))))
 }
 
+/// Create a flag with a given name, status, the `client_toggle` enum, and release type
+/// 
+/// The `client_toggle` enum determines if the flag can be toggled by clients
+/// 
+/// Leaving release type undefined will have it default to `Global`
 #[openapi(tag = "Flags")]
 #[post("/create/flag/<name>/<enabled>/<client_toggle>", data = "<release_type>")]
 async fn create_flag(
@@ -92,6 +103,7 @@ async fn create_flag(
   Ok(status::Created::new("").body(Json(Created::new(&flag.id))))
 }
 
+/// Create a user with a given name, email, and password hash
 #[openapi(tag = "Users")]
 #[post("/create/user/<name>/<email>/<hash>")]
 async fn create_user(
@@ -114,6 +126,7 @@ async fn create_user(
   Ok(status::Created::new("").body(Json(Created::new(&user.id))))
 }
 
+/// Login as a user
 #[openapi(tag = "Users")]
 #[get("/login/<email>/<hash>")]
 async fn login(
