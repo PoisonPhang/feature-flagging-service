@@ -31,7 +31,7 @@ async fn index() -> String {
 }
 
 /// Checks a product's flag to see if it is enabled
-/// 
+///
 /// Optionally can provide a user for flags that use limited/percentage release
 #[openapi(tag = "Flags")]
 #[get("/check/<product>/<feature>/with?<user>")]
@@ -54,7 +54,7 @@ async fn check(
 }
 
 /// Create a product with a given name
-/// 
+///
 /// Can provide a list of initial users (by user ID) for the product
 #[openapi(tag = "Products")]
 #[post("/create/product/<name>", data = "<users>")]
@@ -75,9 +75,9 @@ async fn create_product(
 }
 
 /// Create a flag with a given name, status, the `client_toggle` enum, and release type
-/// 
+///
 /// The `client_toggle` enum determines if the flag can be toggled by clients
-/// 
+///
 /// Leaving release type undefined will have it default to `Global`
 #[openapi(tag = "Flags")]
 #[post("/create/flag/<name>/<enabled>/<client_toggle>", data = "<release_type>")]

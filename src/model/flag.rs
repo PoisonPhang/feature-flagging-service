@@ -165,8 +165,10 @@ impl FeatureFlagBuilder {
 pub enum ReleaseType {
   /// Release is global, only controlled by the `FeatureFlag`'s `enabled` property
   Global,
-  /// Release is limited, limited to a specified `HashMap<String, bool>` where the key is a user ID and the value is the enabled status
+  /// Release is limited, limited to a specified `HashMap<String, bool>` where the key is a user ID and the value is
+  /// the enabled status
   Limited(HashMap<String, bool>),
-  /// Release is percentage, limited to a specified percentage of users contained in the specified `HashMap<String, bool>`
+  /// Release is percentage, limited to a specified percentage of users contained in the specified `HashMap<String,
+  /// bool>`
   Percentage(f32, HashMap<String, bool>),
 }
