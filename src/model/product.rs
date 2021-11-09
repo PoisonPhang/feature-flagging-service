@@ -2,28 +2,26 @@
 
 use std::vec::Vec;
 
-use mongodb::bson::oid::ObjectId;
-
 use serde::{Deserialize, Serialize};
 
 /// Data object for products
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Product {
-  /// ObjectID generated my MongoDB
+  /// String generated my MongoDB
   #[serde(alias = "_id", skip_serializing)]
-  pub id: ObjectId,
+  pub id: String,
   /// Product Name
   pub name: String,
   /// List of controlled features in the product
-  pub features: Vec<ObjectId>,
+  pub features: Vec<String>,
   /// List of product user ids
-  pub users: Vec<ObjectId>,
+  pub users: Vec<String>,
 }
 
 impl Default for Product {
   fn default() -> Product {
     Product {
-      id: ObjectId::default(),
+      id: "default_id".to_string(),
       name: "default_product".to_string(),
       features: Vec::new(),
       users: Vec::new(),
@@ -39,14 +37,14 @@ impl Product {
 
 #[derive(Clone)]
 pub struct ProductBuilder {
-  /// ObjectID generated my MongoDB
-  pub id: ObjectId,
+  /// String unique ID
+  pub id: String,
   /// Product Name
   pub name: String,
-  /// List of controlled features in the product
-  pub features: Vec<ObjectId>,
-  /// List of product user ids
-  pub users: Vec<ObjectId>,
+  /// List of controlled features in the product by ID
+  pub features: Vec<String>,
+  /// List of product user IDs
+  pub users: Vec<String>,
 }
 
 impl Default for ProductBuilder {
@@ -66,7 +64,7 @@ impl ProductBuilder {
     ProductBuilder::default()
   }
 
-  pub fn with_id(mut self, id: ObjectId) -> ProductBuilder {
+  pub fn with_id(mut self, id: String) -> ProductBuilder {
     self.id = id;
     self
   }
@@ -76,12 +74,12 @@ impl ProductBuilder {
     self
   }
 
-  pub fn with_features(mut self, features: Vec<ObjectId>) -> ProductBuilder {
+  pub fn with_features(mut self, features: Vec<String>) -> ProductBuilder {
     self.features = features;
     self
   }
 
-  pub fn with_users(mut self, users: Vec<ObjectId>) -> ProductBuilder {
+  pub fn with_users(mut self, users: Vec<String>) -> ProductBuilder {
     self.users = users;
     self
   }

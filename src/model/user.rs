@@ -1,15 +1,13 @@
 //! Data model for Users
 
-use mongodb::bson::oid::ObjectId;
-
 use serde::{Deserialize, Serialize};
 
 /// Data object for users
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-  /// ObjectID generated my MongoDB
+  /// String generated my MongoDB
   #[serde(alias = "_id", skip_serializing)]
-  pub id: ObjectId,
+  pub id: String,
   /// User Name
   pub name: String,
   /// User email
@@ -21,7 +19,7 @@ pub struct User {
 impl Default for User {
   fn default() -> User {
     User {
-      id: ObjectId::default(),
+      id: String::default(),
       name: "default_user".to_string(),
       email: "default_user_email".to_string(),
       password_hash: "default_password_hash".to_string(),
@@ -37,8 +35,8 @@ impl User {
 
 #[derive(Clone)]
 pub struct UserBuilder {
-  /// ObjectID generated my MongoDB
-  pub id: ObjectId,
+  /// String generated my MongoDB
+  pub id: String,
   /// User Name
   name: String,
   /// User email
@@ -66,7 +64,7 @@ impl UserBuilder {
     UserBuilder::default()
   }
 
-  pub fn with_id(mut self, id: ObjectId) -> UserBuilder {
+  pub fn with_id(mut self, id: String) -> UserBuilder {
     self.id = id;
     self
   }

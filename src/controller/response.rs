@@ -1,9 +1,9 @@
 //! Response data structures for endpoints
 
-use mongodb::bson::oid::ObjectId;
 use rocket::serde::{json::Json, Serialize};
+use rocket_okapi::okapi::schemars::{self, JsonSchema};
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub struct FlagCheck {
   pub enabled: bool,
 }
@@ -18,13 +18,13 @@ impl FlagCheck {
   }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub struct Created {
-  id: ObjectId,
+  id: String,
 }
 
 impl Created {
-  pub fn new(id: ObjectId) -> Created {
-    Created { id }
+  pub fn new(id: &str) -> Created {
+    Created { id: id.to_string() }
   }
 }

@@ -102,7 +102,7 @@ pub async fn create_product(product_builder: ProductBuilder) -> Result<Product, 
     .as_object_id()
     .unwrap_or_else(|| ObjectId::default());
 
-  let product = product_builder.with_id(product_id).build();
+  let product = product_builder.with_id(product_id.to_hex()).build();
 
   Ok(product)
 }
@@ -120,7 +120,7 @@ pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> Result<FeatureFlag
     .as_object_id()
     .unwrap_or_else(|| ObjectId::default());
 
-  let flag = flag_builder.with_id(flag_id).build();
+  let flag = flag_builder.with_id(flag_id.to_hex()).build();
 
   Ok(flag)
 }
@@ -144,7 +144,7 @@ pub async fn create_user(user_builder: UserBuilder) -> Result<User, mongodb::err
     .as_object_id()
     .unwrap_or_else(|| ObjectId::default());
 
-  let user = user_builder.with_id(user_id).build();
+  let user = user_builder.with_id(user_id.to_hex()).build();
 
   Ok(user)
 }

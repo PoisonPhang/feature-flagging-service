@@ -2,16 +2,15 @@
 
 use std::collections::HashMap;
 
-use mongodb::bson::oid::ObjectId;
-
+use rocket_okapi::okapi::schemars::{self, JsonSchema};
 use serde::{Deserialize, Serialize};
 
 /// Data Object for a Feature Flag
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
-  /// ObjectID generated my MongoDB
+  /// Unique ID
   #[serde(alias = "_id", skip_serializing)]
-  pub id: ObjectId,
+  pub id: String,
   /// Flag Name
   pub name: String,
   /// Global enabled status of the flag (false trumps other statuses)
@@ -25,7 +24,7 @@ pub struct FeatureFlag {
 impl Default for FeatureFlag {
   fn default() -> FeatureFlag {
     FeatureFlag {
-      id: ObjectId::default(),
+      id: "default_id".to_string(),
       name: "default_flag".to_string(),
       enabled: false,
       client_toggle: false,
@@ -59,7 +58,7 @@ impl FeatureFlag {
         ReleaseType::Global => {
           return true;
         }
-        ReleaseType::Limited(user_states) => match user_states.get(&ObjectId::parse_str(user).unwrap()) {
+        ReleaseType::Limited(user_states) => match user_states.get(user) {
           Some(user_state) => {
             if !self.client_toggle {
               return true;
@@ -71,7 +70,7 @@ impl FeatureFlag {
           }
           None => {}
         },
-        ReleaseType::Percentage(_, user_states) => match user_states.get(&ObjectId::parse_str(user).unwrap()) {
+        ReleaseType::Percentage(_, user_states) => match user_states.get(user) {
           Some(user_state) => {
             if !self.client_toggle {
               return true;
@@ -92,8 +91,8 @@ impl FeatureFlag {
 
 #[derive(Clone)]
 pub struct FeatureFlagBuilder {
-  /// ObjectID generated my MongoDB
-  pub id: ObjectId,
+  /// String generated my MongoDB
+  pub id: String,
   /// Flag Name
   pub name: String,
   /// Global enabled status of the flag (false trumps other statuses)
@@ -123,7 +122,7 @@ impl FeatureFlagBuilder {
     FeatureFlagBuilder::default()
   }
 
-  pub fn with_id(mut self, id: ObjectId) -> FeatureFlagBuilder {
+  pub fn with_id(mut self, id: String) -> FeatureFlagBuilder {
     self.id = id;
     self
   }
@@ -162,12 +161,12 @@ impl FeatureFlagBuilder {
 /// Data object for a Feature Flag Release Type
 ///
 /// Release types contain relevant information to the type of release
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum ReleaseType {
   /// Release is global, only controlled by the `FeatureFlag`s `enabled` property
   Global,
   /// Release is limited, limited to a specified list of `user_states`
-  Limited(HashMap<ObjectId, bool>),
+  Limited(HashMap<String, bool>),
   /// Release is percentage, limited to a `percentage` of `user_states`
-  Percentage(f32, HashMap<ObjectId, bool>),
+  Percentage(f32, HashMap<String, bool>),
 }

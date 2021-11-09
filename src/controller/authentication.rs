@@ -3,9 +3,13 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use mongodb::bson::oid::ObjectId;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
+use rocket_okapi::okapi::openapi3::{Object, SecurityRequirement, SecurityScheme, SecuritySchemeData};
+use rocket_okapi::{
+  gen::OpenApiGenerator,
+  request::{OpenApiFromRequest, RequestHeaderInput},
+};
 
 const USER_ID: &str = "user_id";
 const AUTH_TOKEN: &str = "auth_token";
@@ -53,10 +57,41 @@ impl<'r> FromRequest<'r> for UserAuth {
   }
 }
 
+impl<'a> OpenApiFromRequest<'a> for UserAuth {
+  fn from_request_input(
+    _gen: &mut OpenApiGenerator,
+    _name: String,
+    _required: bool,
+  ) -> rocket_okapi::Result<RequestHeaderInput> {
+    let security_scheme = SecurityScheme {
+      description: Some("Requires an Bearer token to access, token is: `auth_token`.".to_owned()),
+      // Setup data requirements.
+      // In this case the header `Authorization: mytoken` needs to be set.
+      data: SecuritySchemeData::Http {
+        scheme: "bearer".to_owned(), // `basic`, `digest`, ...
+        // Just gives use a hint to the format used
+        bearer_format: Some("bearer".to_owned()),
+      },
+      extensions: Object::default(),
+    };
+    // Add the requirement for this route/endpoint
+    // This can change between routes.
+    let mut security_req = SecurityRequirement::new();
+    // Each security requirement needs to be met before access is allowed.
+    security_req.insert("UserAuth".to_owned(), Vec::new());
+    // These vvvvvvv-----^^^^^^^^ values need to match exactly!
+    Ok(RequestHeaderInput::Security(
+      "UserAuth".to_owned(),
+      security_scheme,
+      security_req,
+    ))
+  }
+}
+
 /// Contains a hash map of user tokens to validate that a user is logged in
 pub struct AuthTokens {
   /// `HashMap` relating a list of tokens to a user ID
-  user_tokens: HashMap<ObjectId, Vec<String>>,
+  user_tokens: HashMap<String, Vec<String>>,
 }
 
 // TODO implement FromRequest https://api.rocket.rs/v0.5-rc/rocket/request/trait.FromRequest.html
@@ -70,11 +105,11 @@ impl AuthTokens {
   }
 
   /// Creates a new token for the specified user, adds it to the user tokens `HashMap` and returns the token
-  pub fn add_token(&mut self, user_id: ObjectId) -> String {
+  pub fn add_token(&mut self, user_id: &str) -> String {
     // TODO generate real token
     let token = "token";
 
-    let tokens_new = match self.user_tokens.get(&user_id) {
+    let tokens_new = match self.user_tokens.get(user_id) {
       Some(tokens_old) => {
         tokens_old.to_owned().push(token.to_owned());
         tokens_old.to_owned()
@@ -84,22 +119,14 @@ impl AuthTokens {
       }
     };
 
-    self.user_tokens.insert(user_id, tokens_new);
+    self.user_tokens.insert(user_id.to_string(), tokens_new);
 
     token.to_string()
   }
 
   /// Checks if a token is authenticated under a specific user
-  pub fn check_for(&self, user_id_hex: &str, token: &str) -> bool {
-    let user_id = match ObjectId::parse_str(user_id_hex) {
-      Ok(value) => value,
-      Err(e) => {
-        print!("Error parsing user_id (ObjectId) from user_id_hex: {:?}", e);
-        return false;
-      }
-    };
-
-    match self.user_tokens.get(&user_id) {
+  pub fn check_for(&self, user_id: &str, token: &str) -> bool {
+    match self.user_tokens.get(user_id) {
       Some(tokens) => tokens.contains(&token.to_owned()),
       None => false,
     }
