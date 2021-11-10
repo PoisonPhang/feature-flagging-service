@@ -85,9 +85,10 @@ async fn create_product(
 ///
 /// Leaving release type undefined will have it default to `Global`
 #[openapi(tag = "Flags")]
-#[post("/create/flag/<name>/<enabled>/<client_toggle>", data = "<release_type>")]
+#[post("/create/flag/<name>/<product_id>/<enabled>/<client_toggle>", data = "<release_type>")]
 async fn create_flag(
   name: &str,
+  product_id: &str,
   enabled: bool,
   client_toggle: bool,
   release_type: Json<ReleaseType>,
@@ -96,6 +97,7 @@ async fn create_flag(
 ) -> Result<status::Created<Json<Created>>, status::BadRequest<()>> {
   let flag_builder = FeatureFlag::builder()
     .with_name(name)
+    .with_product_id(product_id)
     .with_enabled(enabled)
     .with_client_toggle(client_toggle)
     .with_release_type(release_type.into_inner());
