@@ -97,7 +97,7 @@ pub async fn create_product(product_builder: ProductBuilder) -> error::Result<Pr
     .as_object_id()
     .unwrap_or_else(|| ObjectId::default());
 
-  let product = product_builder.with_oid(product_id.to_hex()).build();
+  let product = product_builder.with_oid(product_id).build();
 
   Ok(product)
 }
@@ -115,7 +115,7 @@ pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> error::Result<Feat
     .as_object_id()
     .unwrap_or_else(|| ObjectId::default());
 
-  let flag = flag_builder.with_oid(flag_id.to_hex()).build();
+  let flag = flag_builder.with_oid(flag_id).build();
 
   Ok(flag)
 }
@@ -139,7 +139,7 @@ pub async fn create_user(user_builder: UserBuilder) -> error::Result<User> {
     .as_object_id()
     .unwrap_or_else(|| ObjectId::default());
 
-  let user = user_builder.with_oid(user_id.to_hex()).build();
+  let user = user_builder.with_oid(user_id).build();
 
   Ok(user)
 }

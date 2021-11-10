@@ -38,8 +38,8 @@ impl Product {
         Some(oid) => oid.to_hex(),
         None => ObjectId::default().to_hex(),
       },
-      name: self.name,
-      users: self.users,
+      name: self.name.clone(),
+      users: self.users.clone(),
     }
   }
 }
