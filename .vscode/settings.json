@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "bson",
-        "dotenv"
+        "dotenv",
+        "schemars"
     ]
 }
