@@ -12,8 +12,6 @@ pub struct Product {
   pub id: String,
   /// Product Name
   pub name: String,
-  /// List of controlled features in the product
-  pub features: Vec<String>,
   /// List of product user ids
   pub users: Vec<String>,
 }
@@ -23,7 +21,6 @@ impl Default for Product {
     Product {
       id: "default_id".to_string(),
       name: "default_product".to_string(),
-      features: Vec::new(),
       users: Vec::new(),
     }
   }
@@ -41,8 +38,6 @@ pub struct ProductBuilder {
   pub id: String,
   /// Product Name
   pub name: String,
-  /// List of controlled features in the product by ID
-  pub features: Vec<String>,
   /// List of product user IDs
   pub users: Vec<String>,
 }
@@ -53,7 +48,6 @@ impl Default for ProductBuilder {
     ProductBuilder {
       id: default_product.id,
       name: default_product.name,
-      features: default_product.features,
       users: default_product.users,
     }
   }
@@ -74,11 +68,6 @@ impl ProductBuilder {
     self
   }
 
-  pub fn with_features(mut self, features: Vec<String>) -> ProductBuilder {
-    self.features = features;
-    self
-  }
-
   pub fn with_users(mut self, users: Vec<String>) -> ProductBuilder {
     self.users = users;
     self
@@ -88,7 +77,6 @@ impl ProductBuilder {
     Product {
       id: self.id,
       name: self.name,
-      features: self.features,
       users: self.users,
     }
   }

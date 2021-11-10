@@ -8,11 +8,13 @@ use serde::{Deserialize, Serialize};
 /// Data Object for a Feature Flag
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
-  /// Unique ID
+  /// Unique ID of the feature flag
   #[serde(alias = "_id", skip_serializing)]
   pub id: String,
-  /// Flag Name
+  /// Name of the feature flag
   pub name: String,
+  /// Unique ID of the product the feature flag belongs to
+  pub product_id: String,
   /// Global enabled status of the flag (false trumps other statuses)
   pub enabled: bool,
   /// If client toggles are enabled
@@ -26,6 +28,7 @@ impl Default for FeatureFlag {
     FeatureFlag {
       id: "default_id".to_string(),
       name: "default_flag".to_string(),
+      product_id: "default_product".to_string(),
       enabled: false,
       client_toggle: false,
       release_type: ReleaseType::Global,
@@ -34,9 +37,17 @@ impl Default for FeatureFlag {
 }
 
 impl FeatureFlag {
+  /// Returns a `FeatureFlagBuilder` to eventually construct a `FeatureFlag`
   pub fn builder() -> FeatureFlagBuilder {
-    FeatureFlagBuilder::default()
+    FeatureFlagBuilder::new()
   }
+
+  /// Evaluates the flag returning true if it is enabled and false otherwise
+  /// 
+  /// Can optionally be provided a user to evaluate with
+  /// 
+  /// # Parameters
+  /// * **user** - *(optional)* User used to evaluate the flag with
   pub fn evaluate(&self, user: Option<&str>) -> bool {
     // If no user is provided, only evaluate Global release type as potentially true
     let user = match user {
@@ -95,6 +106,8 @@ pub struct FeatureFlagBuilder {
   pub id: String,
   /// Flag Name
   pub name: String,
+  /// Unique ID of the product the feature flag belongs to
+  pub product_id: String,
   /// Global enabled status of the flag (false trumps other statuses)
   pub enabled: bool,
   /// If client toggles are enabled
@@ -110,6 +123,7 @@ impl Default for FeatureFlagBuilder {
     FeatureFlagBuilder {
       id: default_flag.id,
       name: default_flag.name,
+      product_id: default_flag.product_id,
       enabled: default_flag.enabled,
       client_toggle: default_flag.client_toggle,
       release_type: default_flag.release_type,
@@ -132,6 +146,11 @@ impl FeatureFlagBuilder {
     self
   }
 
+  pub fn with_product_id(mut self, product_id: &str) -> FeatureFlagBuilder {
+    self.product_id = product_id.to_string();
+    self
+  }
+
   pub fn with_enabled(mut self, enabled: bool) -> FeatureFlagBuilder {
     self.enabled = enabled;
     self
@@ -151,6 +170,7 @@ impl FeatureFlagBuilder {
     FeatureFlag {
       id: self.id,
       name: self.name,
+      product_id: self.product_id,
       enabled: self.enabled,
       client_toggle: self.client_toggle,
       release_type: self.release_type,
