@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 dotenv  = "0.15.0"
 futures = "0.3.17"
-mongodb = "2.0.0"
+mongodb = "2.0.1"
 rocket  = {version = "0.5.0-rc.1", features = ["json", "secrets"]}
 rocket_okapi = { version = "0.8.0-alpha-1", features = ["swagger"] }
 tokio   = { version = "1.12.0", features = ["full"] }
