@@ -18,7 +18,7 @@ use controller::authentication::{AuthTokens, UserAuth};
 use controller::database::ConnectionManager;
 use controller::response::{Created, FlagCheck};
 use model::flag::{FeatureFlag, ReleaseType};
-use model::product::Product;
+use model::product::{Product, SpecSafeProduct};
 use model::user::User;
 
 const USER_ID: &str = "user_id";
@@ -58,13 +58,20 @@ async fn check(
   FlagCheck::get_disabled().await
 }
 
-async fn get_products(user_email: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<Product>> {
+#[openapi(tag = "Products")]
+#[get("/get/products/<user_email>")]
+async fn get_products(user_email: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<SpecSafeProduct>> {
   let user = match database_connection.get_user(user_email).await {
     Some(value) => value,
-    None => return Json(vec![]),
+    None => return Json(vec!()),
   };
 
-  Json(database_connection.get_products(&user.id).await)
+  let user_id = match user.oid.clone() {
+    Some(oid) => oid,
+    None => return Json(vec!()),
+  };
+
+  Json(database_connection.get_products(&user_id.to_hex()).await.iter().map(|x| x.get_spec_safe_product()).collect::<Vec<SpecSafeProduct>>())
 }
 
 /// Create a product with a given name
@@ -85,7 +92,12 @@ async fn create_product(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new("").body(Json(Created::new(&product.id))))
+  let product_id = match product.oid {
+    Some(oid) => oid,
+    None => return Err(status::BadRequest(None)),
+  };
+
+  Ok(status::Created::new("").body(Json(Created::new(&product_id.to_hex()))))
 }
 
 /// Create a flag with a given name, status, the `client_toggle` enum, and release type
@@ -119,7 +131,12 @@ async fn create_flag(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new("").body(Json(Created::new(&flag.id))))
+  let flag_id = match flag.oid {
+    Some(oid) => oid,
+    None => return Err(status::BadRequest(None)),
+  };
+
+  Ok(status::Created::new("").body(Json(Created::new(&flag_id.to_hex()))))
 }
 
 /// Create a user with a given name, email, and password hash
@@ -142,7 +159,12 @@ async fn create_user(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new("").body(Json(Created::new(&user.id))))
+  let user_id = match user.oid.clone() {
+    Some(oid) => oid,
+    None => return Err(status::BadRequest(None)),
+  };
+
+  Ok(status::Created::new("").body(Json(Created::new(&user_id.to_hex()))))
 }
 
 /// Login as a user
@@ -166,9 +188,14 @@ async fn login(
       Err(poisoned) => poisoned.into_inner(), // recover from poisoned mutex
     };
 
+    let user_id = match user.oid.clone() {
+      Some(oid) => oid,
+      None => return Err(status::BadRequest(None)),
+    };
+
     // Add cookies for user id and authentication token to request
-    jar.add_private(Cookie::new(USER_ID, user.id.clone()));
-    jar.add_private(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(&user.id)));
+    jar.add_private(Cookie::new(USER_ID, user_id.to_hex()));
+    jar.add_private(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(&user_id.to_hex())));
 
     return Ok(status::Accepted(None));
   }
@@ -183,7 +210,15 @@ fn rocket() -> _ {
     .manage(Arc::new(Mutex::new(AuthTokens::new()))) // Wrap in Arc<Mutex<T>> for thread safe mutability
     .mount(
       "/",
-      openapi_get_routes![index, check, create_product, create_flag, create_user, login],
+      openapi_get_routes![
+        index,
+        check,
+        get_products,
+        create_product,
+        create_flag,
+        create_user,
+        login
+      ],
     )
     .mount(
       "/swagger-ui/",

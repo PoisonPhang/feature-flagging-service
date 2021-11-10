@@ -1,15 +1,16 @@
 //! Data model for Products
 
-use std::vec::Vec;
-
+use mongodb::bson::oid::ObjectId;
+use rocket_okapi::okapi::schemars::{self, JsonSchema};
 use serde::{Deserialize, Serialize};
+use std::vec::Vec;
 
 /// Data object for products
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Product {
   /// String generated my MongoDB
-  #[serde(alias = "_id", skip_serializing)]
-  pub id: String,
+  #[serde(alias = "_id", skip_serializing_if = "Option::is_none")]
+  pub oid: Option<ObjectId>,
   /// Product Name
   pub name: String,
   /// List of product user ids
@@ -19,7 +20,7 @@ pub struct Product {
 impl Default for Product {
   fn default() -> Product {
     Product {
-      id: "default_id".to_string(),
+      oid: Default::default(),
       name: "default_product".to_string(),
       users: Vec::new(),
     }
@@ -30,12 +31,32 @@ impl Product {
   pub fn builder() -> ProductBuilder {
     ProductBuilder::new()
   }
+
+  pub fn get_spec_safe_product(&self) -> SpecSafeProduct {
+    SpecSafeProduct {
+      oid: match self.oid {
+        Some(oid) => oid.to_hex(),
+        None => ObjectId::default().to_hex(),
+      },
+      name: self.name,
+      users: self.users,
+    }
+  }
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SpecSafeProduct {
+  pub oid: String,
+  /// Product Name
+  pub name: String,
+  /// List of product user ids
+  pub users: Vec<String>,
 }
 
 #[derive(Clone)]
 pub struct ProductBuilder {
   /// String unique ID
-  pub id: String,
+  pub oid: Option<ObjectId>,
   /// Product Name
   pub name: String,
   /// List of product user IDs
@@ -46,7 +67,7 @@ impl Default for ProductBuilder {
   fn default() -> ProductBuilder {
     let default_product = Product::default();
     ProductBuilder {
-      id: default_product.id,
+      oid: default_product.oid,
       name: default_product.name,
       users: default_product.users,
     }
@@ -58,8 +79,8 @@ impl ProductBuilder {
     ProductBuilder::default()
   }
 
-  pub fn with_id(mut self, id: String) -> ProductBuilder {
-    self.id = id;
+  pub fn with_oid(mut self, oid: ObjectId) -> ProductBuilder {
+    self.oid = Some(oid);
     self
   }
 
@@ -75,7 +96,7 @@ impl ProductBuilder {
 
   pub fn build(self) -> Product {
     Product {
-      id: self.id,
+      oid: self.oid,
       name: self.name,
       users: self.users,
     }

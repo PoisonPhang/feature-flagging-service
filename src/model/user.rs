@@ -1,13 +1,14 @@
 //! Data model for Users
 
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 /// Data object for users
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
   /// String generated my MongoDB
-  #[serde(alias = "_id", skip_serializing)]
-  pub id: String,
+  #[serde(alias = "_id", skip_serializing_if = "Option::is_none")]
+  pub oid: Option<ObjectId>,
   /// User Name
   pub name: String,
   /// User email
@@ -19,7 +20,7 @@ pub struct User {
 impl Default for User {
   fn default() -> User {
     User {
-      id: String::default(),
+      oid: Default::default(),
       name: "default_user".to_string(),
       email: "default_user_email".to_string(),
       password_hash: "default_password_hash".to_string(),
@@ -36,7 +37,7 @@ impl User {
 #[derive(Clone)]
 pub struct UserBuilder {
   /// String generated my MongoDB
-  pub id: String,
+  oid: Option<ObjectId>,
   /// User Name
   name: String,
   /// User email
@@ -50,7 +51,7 @@ impl Default for UserBuilder {
     let default_user = User::default();
 
     UserBuilder {
-      id: default_user.id,
+      oid: default_user.oid,
       name: default_user.name,
       email: default_user.email,
       password_hash: default_user.password_hash,
@@ -64,8 +65,8 @@ impl UserBuilder {
     UserBuilder::default()
   }
 
-  pub fn with_id(mut self, id: String) -> UserBuilder {
-    self.id = id;
+  pub fn with_oid(mut self, oid: ObjectId) -> UserBuilder {
+    self.oid = Some(oid);
     self
   }
 
@@ -100,7 +101,7 @@ impl UserBuilder {
   /// ```
   pub fn build(self) -> User {
     User {
-      id: self.id,
+      oid: self.oid,
       name: self.name,
       email: self.email,
       password_hash: self.password_hash,

@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use mongodb::bson::oid::ObjectId;
 use rocket_okapi::okapi::schemars::{self, JsonSchema};
 use serde::{Deserialize, Serialize};
 
@@ -9,8 +10,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
   /// Unique ID of the feature flag
-  #[serde(alias = "_id", skip_serializing)]
-  pub id: String,
+  #[serde(alias = "_id", skip_serializing_if = "Option::is_none")]
+  pub oid: Option<ObjectId>,
   /// Name of the feature flag
   pub name: String,
   /// Unique ID of the product the feature flag belongs to
@@ -26,7 +27,7 @@ pub struct FeatureFlag {
 impl Default for FeatureFlag {
   fn default() -> FeatureFlag {
     FeatureFlag {
-      id: "default_id".to_string(),
+      oid: Default::default(),
       name: "default_flag".to_string(),
       product_id: "default_product".to_string(),
       enabled: false,
@@ -103,7 +104,7 @@ impl FeatureFlag {
 #[derive(Clone)]
 pub struct FeatureFlagBuilder {
   /// String generated my MongoDB
-  pub id: String,
+  pub oid: Option<ObjectId>,
   /// Flag Name
   pub name: String,
   /// Unique ID of the product the feature flag belongs to
@@ -121,7 +122,7 @@ impl Default for FeatureFlagBuilder {
     let default_flag = FeatureFlag::default();
 
     FeatureFlagBuilder {
-      id: default_flag.id,
+      oid: default_flag.oid,
       name: default_flag.name,
       product_id: default_flag.product_id,
       enabled: default_flag.enabled,
@@ -136,8 +137,8 @@ impl FeatureFlagBuilder {
     FeatureFlagBuilder::default()
   }
 
-  pub fn with_id(mut self, id: String) -> FeatureFlagBuilder {
-    self.id = id;
+  pub fn with_oid(mut self, oid: ObjectId) -> FeatureFlagBuilder {
+    self.oid = Some(oid);
     self
   }
 
@@ -168,7 +169,7 @@ impl FeatureFlagBuilder {
 
   pub fn build(self) -> FeatureFlag {
     FeatureFlag {
-      id: self.id,
+      oid: self.oid,
       name: self.name,
       product_id: self.product_id,
       enabled: self.enabled,
