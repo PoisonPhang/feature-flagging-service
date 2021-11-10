@@ -43,9 +43,9 @@ impl FeatureFlag {
   }
 
   /// Evaluates the flag returning true if it is enabled and false otherwise
-  /// 
+  ///
   /// Can optionally be provided a user to evaluate with
-  /// 
+  ///
   /// # Parameters
   /// * **user** - *(optional)* User used to evaluate the flag with
   pub fn evaluate(&self, user: Option<&str>) -> bool {

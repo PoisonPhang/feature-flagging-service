@@ -58,6 +58,21 @@ impl ConnectionManager {
     }
   }
 
+  pub async fn get_products(&self, user_id: &str) -> Vec<Product> {
+    match &self.connection_type {
+      ConnectionType::MongoDB => match mongo::get_products(user_id).await {
+        Ok(products) => return products,
+        Err(e) => {
+          println!(
+            "Error getting products for user w/ ID: {}. Returning Option::None. Error {:?}",
+            user_id, e
+          );
+          return vec![];
+        }
+      },
+    }
+  }
+
   /// Given a product id, and flag name, returns a fully constructed `FeatureFlag`
   ///
   /// Returns `FeatureFlag` inside of an `Option<FeatureFlag>`. If anything goes wrong, this function will return `None`

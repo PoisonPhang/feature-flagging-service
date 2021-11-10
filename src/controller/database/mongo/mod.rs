@@ -4,7 +4,8 @@ use dotenv;
 use futures::stream::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
-use mongodb::options::{ClientOptions, FindOptions, FindOneOptions};
+use mongodb::error;
+use mongodb::options::{ClientOptions, FindOneOptions, FindOptions};
 use mongodb::Client;
 
 use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
@@ -18,16 +19,33 @@ use crate::model::user::{User, UserBuilder};
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_product(product_name: &str) -> Result<Option<Product>, mongodb::error::Error> {
+pub async fn get_product(product_name: &str) -> error::Result<Option<Product>> {
   let client = get_client().await?;
 
   let db = client.database("data");
   let product_collection = db.collection::<Product>("products");
 
   let filter = doc! { "name": product_name };
-  let find_options = FindOneOptions::builder().sort(doc! { "name": 1 }).build();
 
-  product_collection.find_one(filter, find_options).await
+  product_collection.find_one(filter, None).await
+}
+
+pub async fn get_products(user_id: &str) -> error::Result<Vec<Product>> {
+  let client = get_client().await?;
+  let mut products: Vec<Product> = vec![];
+
+  let db = client.database("data");
+  let product_collection = db.collection::<Product>("products");
+
+  let filter = doc! {"users": user_id};
+
+  let mut cursor = product_collection.find(filter, None).await?;
+
+  while let Some(product) = cursor.try_next().await? {
+    products.push(product)
+  }
+
+  Ok(products)
 }
 
 /// Given a product name and flag name, this will search for and return a fully constructed `FeatureFlag` from MongoDB
@@ -37,16 +55,15 @@ pub async fn get_product(product_name: &str) -> Result<Option<Product>, mongodb:
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> Result<Option<FeatureFlag>, mongodb::error::Error> {
+pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> error::Result<Option<FeatureFlag>> {
   let client = get_client().await?;
 
   let db = client.database("data");
   let features_collection = db.collection::<FeatureFlag>("features");
 
   let filter = doc! { "name": flag_name, "product_id": product_id };
-  let find_options = FindOneOptions::builder().sort(doc! {"name": 1 }).build();
 
-  features_collection.find_one(filter, find_options).await
+  features_collection.find_one(filter, None).await
 }
 
 /// Given a user email, this will search for and return a fully constructed `User` from MongoDB wrapped inside of a
@@ -56,19 +73,18 @@ pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> Result<Optio
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_user(user_email: &str) -> Result<Option<User>, mongodb::error::Error> {
+pub async fn get_user(user_email: &str) -> error::Result<Option<User>> {
   let client = get_client().await?;
 
   let db = client.database("data");
   let user_collection = db.collection::<User>("users");
 
   let filter = doc! {"email": user_email };
-  let find_options = FindOneOptions::builder().sort(doc! { "email": 1}).build();
 
-  user_collection.find_one(filter, find_options).await
+  user_collection.find_one(filter, None).await
 }
 
-pub async fn create_product(product_builder: ProductBuilder) -> Result<Product, mongodb::error::Error> {
+pub async fn create_product(product_builder: ProductBuilder) -> error::Result<Product> {
   let client = get_client().await?;
 
   let db = client.database("data");
@@ -86,7 +102,7 @@ pub async fn create_product(product_builder: ProductBuilder) -> Result<Product, 
   Ok(product)
 }
 
-pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> Result<FeatureFlag, mongodb::error::Error> {
+pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> error::Result<FeatureFlag> {
   let client = get_client().await?;
 
   let db = client.database("data");
@@ -110,7 +126,7 @@ pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> Result<FeatureFlag
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn create_user(user_builder: UserBuilder) -> Result<User, mongodb::error::Error> {
+pub async fn create_user(user_builder: UserBuilder) -> error::Result<User> {
   let client = get_client().await?;
 
   let db = client.database("data");
@@ -128,7 +144,7 @@ pub async fn create_user(user_builder: UserBuilder) -> Result<User, mongodb::err
   Ok(user)
 }
 
-async fn get_client() -> Result<Client, mongodb::error::Error> {
+async fn get_client() -> error::Result<Client> {
   dotenv::dotenv().ok();
 
   let connection_string = match dotenv::var("MONGO_STR") {

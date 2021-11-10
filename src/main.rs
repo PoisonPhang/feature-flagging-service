@@ -33,7 +33,7 @@ async fn index() -> String {
 /// Checks a product's flag to see if it is enabled
 ///
 /// Optionally can provide a user for flags that use limited/percentage release
-/// 
+///
 /// # Parameters
 /// * **product_id** - Unique ID of the product that the feature flag belongs to
 /// * **feature**    - Name of the feature flag
@@ -56,6 +56,15 @@ async fn check(
   }
 
   FlagCheck::get_disabled().await
+}
+
+async fn get_products(user_email: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<Product>> {
+  let user = match database_connection.get_user(user_email).await {
+    Some(value) => value,
+    None => return Json(vec![]),
+  };
+
+  Json(database_connection.get_products(&user.id).await)
 }
 
 /// Create a product with a given name
@@ -85,7 +94,10 @@ async fn create_product(
 ///
 /// Leaving release type undefined will have it default to `Global`
 #[openapi(tag = "Flags")]
-#[post("/create/flag/<name>/<product_id>/<enabled>/<client_toggle>", data = "<release_type>")]
+#[post(
+  "/create/flag/<name>/<product_id>/<enabled>/<client_toggle>",
+  data = "<release_type>"
+)]
 async fn create_flag(
   name: &str,
   product_id: &str,
