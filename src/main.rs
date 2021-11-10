@@ -33,15 +33,20 @@ async fn index() -> String {
 /// Checks a product's flag to see if it is enabled
 ///
 /// Optionally can provide a user for flags that use limited/percentage release
+/// 
+/// # Parameters
+/// * **product_id** - Unique ID of the product that the feature flag belongs to
+/// * **feature**    - Name of the feature flag
+/// * **user**       - *(optional)* unique ID of the user to evaluate the flag with
 #[openapi(tag = "Flags")]
-#[get("/check/<product>/<feature>/with?<user>")]
+#[get("/check/<product_id>/<feature>/with?<user>")]
 async fn check(
-  product: &str,
+  product_id: &str,
   feature: &str,
   user: Option<&str>,
   database_connection: &State<ConnectionManager>,
 ) -> Option<Json<FlagCheck>> {
-  match database_connection.get_feature_flag(product, feature).await {
+  match database_connection.get_feature_flag(product_id, feature).await {
     Some(response) => {
       if response.evaluate(user) {
         return FlagCheck::get_enabled().await;

@@ -4,7 +4,7 @@ use dotenv;
 use futures::stream::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
-use mongodb::options::{ClientOptions, FindOptions};
+use mongodb::options::{ClientOptions, FindOptions, FindOneOptions};
 use mongodb::Client;
 
 use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
@@ -18,23 +18,16 @@ use crate::model::user::{User, UserBuilder};
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_product(product_name: &str) -> Result<Product, mongodb::error::Error> {
+pub async fn get_product(product_name: &str) -> Result<Option<Product>, mongodb::error::Error> {
   let client = get_client().await?;
-  let mut product = Product::default();
 
   let db = client.database("data");
   let product_collection = db.collection::<Product>("products");
 
   let filter = doc! { "name": product_name };
-  let find_options = FindOptions::builder().sort(doc! { "name": 1 }).build();
+  let find_options = FindOneOptions::builder().sort(doc! { "name": 1 }).build();
 
-  let mut cursor = product_collection.find(filter, find_options).await?;
-
-  while let Some(product_found) = cursor.try_next().await? {
-    product = product_found;
-  }
-
-  Ok(product)
+  product_collection.find_one(filter, find_options).await
 }
 
 /// Given a product name and flag name, this will search for and return a fully constructed `FeatureFlag` from MongoDB
@@ -44,23 +37,16 @@ pub async fn get_product(product_name: &str) -> Result<Product, mongodb::error::
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_feature_flag(product: &str, flag_name: &str) -> Result<FeatureFlag, mongodb::error::Error> {
+pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> Result<Option<FeatureFlag>, mongodb::error::Error> {
   let client = get_client().await?;
-  let mut feature = FeatureFlag::default();
 
   let db = client.database("data");
   let features_collection = db.collection::<FeatureFlag>("features");
 
-  let filter = doc! { "name": flag_name, "product": product };
-  let find_options = FindOptions::builder().sort(doc! {"name": 1 }).build();
+  let filter = doc! { "name": flag_name, "product_id": product_id };
+  let find_options = FindOneOptions::builder().sort(doc! {"name": 1 }).build();
 
-  let mut cursor = features_collection.find(filter, find_options).await?;
-
-  while let Some(feature_found) = cursor.try_next().await? {
-    feature = feature_found;
-  }
-
-  Ok(feature)
+  features_collection.find_one(filter, find_options).await
 }
 
 /// Given a user email, this will search for and return a fully constructed `User` from MongoDB wrapped inside of a
@@ -70,23 +56,16 @@ pub async fn get_feature_flag(product: &str, flag_name: &str) -> Result<FeatureF
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_user(user_email: &str) -> Result<User, mongodb::error::Error> {
+pub async fn get_user(user_email: &str) -> Result<Option<User>, mongodb::error::Error> {
   let client = get_client().await?;
-  let mut user = User::default();
 
   let db = client.database("data");
   let user_collection = db.collection::<User>("users");
 
   let filter = doc! {"email": user_email };
-  let find_options = FindOptions::builder().sort(doc! { "email": 1}).build();
+  let find_options = FindOneOptions::builder().sort(doc! { "email": 1}).build();
 
-  let mut cursor = user_collection.find(filter, find_options).await?;
-
-  while let Some(user_found) = cursor.try_next().await? {
-    user = user_found;
-  }
-
-  Ok(user)
+  user_collection.find_one(filter, find_options).await
 }
 
 pub async fn create_product(product_builder: ProductBuilder) -> Result<Product, mongodb::error::Error> {

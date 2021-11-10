@@ -46,7 +46,7 @@ impl ConnectionManager {
   pub async fn get_product(&self, product_name: &str) -> Option<Product> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_product(product_name).await {
-        Ok(value) => return Some(value),
+        Ok(product) => return product,
         Err(e) => {
           println!(
             "Error getting product '{}'. Returning Option::None. Error {:?}",
@@ -61,10 +61,10 @@ impl ConnectionManager {
   /// Given a product id, and flag name, returns a fully constructed `FeatureFlag`
   ///
   /// Returns `FeatureFlag` inside of an `Option<FeatureFlag>`. If anything goes wrong, this function will return `None`
-  pub async fn get_feature_flag(&self, product: &str, flag_name: &str) -> Option<FeatureFlag> {
+  pub async fn get_feature_flag(&self, product_id: &str, flag_name: &str) -> Option<FeatureFlag> {
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::get_feature_flag(product, flag_name).await {
-        Ok(value) => return Some(value),
+      ConnectionType::MongoDB => match mongo::get_feature_flag(product_id, flag_name).await {
+        Ok(feature_flag) => return feature_flag,
         Err(e) => {
           println!(
             "Error getting feature '{}'. Returning Option::None. Error: {:?}",
@@ -82,7 +82,7 @@ impl ConnectionManager {
   pub async fn get_user(&self, user_email: &str) -> Option<User> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_user(user_email).await {
-        Ok(value) => return Some(value),
+        Ok(user) => return user,
         Err(e) => {
           println!(
             "Error getting user from email '{}'. Returning Option::None. Error: {:?}",
