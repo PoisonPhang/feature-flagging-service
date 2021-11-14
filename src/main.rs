@@ -12,12 +12,13 @@ use rocket::http::{Cookie, CookieJar};
 use rocket::response::status;
 use rocket::serde::json::Json;
 use rocket::State;
-use rocket_okapi::{openapi, openapi_get_routes, swagger_ui::*};
+use rocket_okapi::{openapi, openapi_get_routes};
+use rocket_okapi::swagger_ui::{self, SwaggerUIConfig};
 
 use controller::authentication::{AuthTokens, UserAuth};
 use controller::database::ConnectionManager;
 use controller::response::{Created, FlagCheck};
-use model::flag::{FeatureFlag, ReleaseType};
+use model::flag::{FeatureFlag, ReleaseType, SpecSafeFeatureFlag};
 use model::product::{Product, SpecSafeProduct};
 use model::user::User;
 
@@ -58,6 +59,29 @@ async fn check(
   FlagCheck::get_disabled().await
 }
 
+/// Gets a product given a name
+/// 
+/// Will return 404 if no product with the given name is found
+/// 
+/// # Parameters
+/// * **name** - Name of the product
+#[openapi(tag = "Products")]
+#[get("/get/product/<name>")]
+async fn get_product(name: &str, database_connection: &State<ConnectionManager>) -> Result<Json<SpecSafeProduct>, status::NotFound<()>> {
+  let product = match database_connection.get_product(name).await {
+    Some(product) => product,
+    None => return Err(status::NotFound(()))
+  };
+
+  Ok(Json(product.get_spec_safe_product()))
+}
+
+/// Gets all products that a user consumes
+/// 
+/// If no products are found - this will return an empty list
+/// 
+/// # Parameters
+/// * **user_email** - email of a given user
 #[openapi(tag = "Products")]
 #[get("/get/products/<user_email>")]
 async fn get_products(user_email: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<SpecSafeProduct>> {
@@ -74,9 +98,30 @@ async fn get_products(user_email: &str, database_connection: &State<ConnectionMa
   Json(database_connection.get_products(&user_id.to_hex()).await.iter().map(|x| x.get_spec_safe_product()).collect::<Vec<SpecSafeProduct>>())
 }
 
+#[openapi(tag = "Flags")]
+#[get("/get/flag/<name>/<product_id>")]
+async fn get_flag(name: &str, product_id: &str, database_connection: &State<ConnectionManager>) -> Result<Json<SpecSafeFeatureFlag>, status::NotFound<()>> {
+  let flag = match database_connection.get_feature_flag(product_id, name).await {
+    Some(flag) => flag,
+    None => return Err(status::NotFound(()))
+  };
+
+  Ok(Json(flag.get_spec_safe_feature_flag()))
+}
+
+#[openapi(tag = "Flags")]
+#[get("/get/flags/<product_id>")]
+async fn get_flags(product_id: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<SpecSafeFeatureFlag>> {
+  Json(database_connection.get_feature_flags(product_id).await.iter().map(|x| x.get_spec_safe_feature_flag()).collect::<Vec<SpecSafeFeatureFlag>>())
+}
+
 /// Create a product with a given name
 ///
 /// Can provide a list of initial users (by user ID) for the product
+/// 
+/// # Parameters
+/// * **name**  - Name of the new product
+/// * **users** - List of initial users (send empty list if none are desired)
 #[openapi(tag = "Products")]
 #[post("/create/product/<name>", data = "<users>")]
 async fn create_product(
@@ -105,6 +150,13 @@ async fn create_product(
 /// The `client_toggle` enum determines if the flag can be toggled by clients
 ///
 /// Leaving release type undefined will have it default to `Global`
+/// 
+/// # Parameters
+/// * **name**          - Name of the new feature flag
+/// * **product_id**    - Unique ID of product the flag belongs to
+/// * **enabled**       - If the flag is enabled (true) or not (false)
+/// * **client_toggle** - If clients can toggle flags on/off for themselves
+/// * **release_type**  - Release type enum containing relevant data to the release type
 #[openapi(tag = "Flags")]
 #[post(
   "/create/flag/<name>/<product_id>/<enabled>/<client_toggle>",
@@ -140,6 +192,11 @@ async fn create_flag(
 }
 
 /// Create a user with a given name, email, and password hash
+/// 
+/// # Parameters
+/// * **name**  - Name of the new user
+/// * **email** - Email address for the new user
+/// * **hash**  - Hashed password of the new user
 #[openapi(tag = "Users")]
 #[post("/create/user/<name>/<email>/<hash>")]
 async fn create_user(
@@ -168,6 +225,10 @@ async fn create_user(
 }
 
 /// Login as a user
+/// 
+/// # Parameters
+/// * **email** - email of the user being logged in
+/// * **hash**  - Hashed password of the user being logged in
 #[openapi(tag = "Users")]
 #[get("/login/<email>/<hash>")]
 async fn login(
@@ -213,7 +274,10 @@ fn rocket() -> _ {
       openapi_get_routes![
         index,
         check,
+        get_product,
         get_products,
+        get_flag,
+        get_flags,
         create_product,
         create_flag,
         create_user,
@@ -222,7 +286,7 @@ fn rocket() -> _ {
     )
     .mount(
       "/swagger-ui/",
-      make_swagger_ui(&SwaggerUIConfig {
+      swagger_ui::make_swagger_ui(&SwaggerUIConfig {
         url: "../openapi.json".to_string(),
         ..Default::default()
       }),

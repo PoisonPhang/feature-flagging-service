@@ -64,7 +64,7 @@ impl ConnectionManager {
         Ok(products) => return products,
         Err(e) => {
           println!(
-            "Error getting products for user w/ ID: {}. Returning Option::None. Error {:?}",
+            "Error getting products for user w/ ID: {}. Returning empty Vec. Error {:?}",
             user_id, e
           );
           return vec![];
@@ -86,6 +86,21 @@ impl ConnectionManager {
             flag_name, e
           );
           return None;
+        }
+      },
+    }
+  }
+
+  pub async fn get_feature_flags(&self, product_id: &str) -> Vec<FeatureFlag> {
+    match &self.connection_type {
+      ConnectionType::MongoDB => match mongo::get_feature_flags(product_id).await {
+        Ok(feature_flags) => return feature_flags,
+        Err(e) => {
+          println!(
+            "Error getting features for product_id '{}'. Returning empty Vec. Error: {:?}",
+            product_id, e
+          );
+          return vec![]
         }
       },
     }

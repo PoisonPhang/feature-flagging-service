@@ -32,7 +32,7 @@ pub async fn get_product(product_name: &str) -> error::Result<Option<Product>> {
 
 pub async fn get_products(user_id: &str) -> error::Result<Vec<Product>> {
   let client = get_client().await?;
-  let mut products: Vec<Product> = vec![];
+  let mut products: Vec<Product> = vec!();
 
   let db = client.database("data");
   let product_collection = db.collection::<Product>("products");
@@ -42,7 +42,7 @@ pub async fn get_products(user_id: &str) -> error::Result<Vec<Product>> {
   let mut cursor = product_collection.find(filter, None).await?;
 
   while let Some(product) = cursor.try_next().await? {
-    products.push(product)
+    products.push(product);
   }
 
   Ok(products)
@@ -64,6 +64,24 @@ pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> error::Resul
   let filter = doc! { "name": flag_name, "product_id": product_id };
 
   features_collection.find_one(filter, None).await
+}
+
+pub async fn get_feature_flags(product_id: &str) -> error::Result<Vec<FeatureFlag>> {
+  let client = get_client().await?;
+  let mut feature_flags:Vec<FeatureFlag> = vec!(); 
+
+  let db = client.database("data");
+  let features_collection = db.collection::<FeatureFlag>("features");
+
+  let filter = doc! {"product": product_id};
+
+  let mut cursor = features_collection.find(filter, None).await?;
+
+  while let Some(feature_flag) = cursor.try_next().await? {
+    feature_flags.push(feature_flag);
+  }
+
+  Ok(feature_flags)
 }
 
 /// Given a user email, this will search for and return a fully constructed `User` from MongoDB wrapped inside of a
