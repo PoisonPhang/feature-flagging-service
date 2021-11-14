@@ -99,6 +99,36 @@ impl FeatureFlag {
 
     false
   }
+
+  pub fn get_spec_safe_feature_flag(&self) -> SpecSafeFeatureFlag {
+    SpecSafeFeatureFlag {
+      oid: match self.oid {
+        Some(oid) => oid.to_hex(),
+        None => ObjectId::default().to_hex(),
+      },
+      name: self.name.clone(),
+      product_id: self.product_id.clone(),
+      enabled: self.enabled,
+      client_toggle: self.client_toggle,
+      release_type: self.release_type.clone(),
+    }
+  }
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SpecSafeFeatureFlag {
+  // Unique ID of the feature flag
+  pub oid: String,
+  /// Name of the feature flag
+  pub name: String,
+  /// Unique ID of the product the feature flag belongs to
+  pub product_id: String,
+  /// Global enabled status of the flag (false trumps other statuses)
+  pub enabled: bool,
+  /// If client toggles are enabled
+  pub client_toggle: bool,
+  /// Type of release and relevant data
+  pub release_type: ReleaseType,
 }
 
 #[derive(Clone)]
