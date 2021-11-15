@@ -20,7 +20,7 @@ use controller::database::ConnectionManager;
 use controller::response::{Created, FlagCheck};
 use model::flag::{FeatureFlag, ReleaseType, SpecSafeFeatureFlag};
 use model::product::{Product, SpecSafeProduct};
-use model::user::User;
+use model::user::{User, AccountType};
 
 const USER_ID: &str = "user_id";
 const AUTH_TOKEN: &str = "auth_token";
@@ -57,6 +57,57 @@ async fn check(
   }
 
   FlagCheck::get_disabled().await
+}
+
+/// Hoist a flag!
+/// 
+/// If the user is a `AccountType::Developer` then the flag is enabled globally
+/// 
+/// If the user is a `AccountType::Client` then the flag is enabled for that user.
+/// The user will still need to have access to the flag
+/// 
+/// Returns 400 if something goes wrong, 202 otherwise
+/// 
+/// # Parameters
+/// * **product_id** - Unique ID of the product
+/// * **feature**    - Name of the feature
+/// * **user_email** - email of the user hoisting the flag
+#[openapi(tag = "Flags")]
+#[get("/hoist/<product_id>/<feature>/<user_email>")]
+async fn hoist(
+  product_id: &str,
+  feature: &str,
+  user_email: &str,
+  database_connection: &State<ConnectionManager>,
+) -> Result<status::Accepted<()>, status::BadRequest<()>> {
+  let mut flag = match database_connection.get_feature_flag(product_id, feature).await {
+    Some(flag) => flag,
+    None => return Err(status::BadRequest(None)),
+  };
+
+  let flag_id = match flag.oid {
+    Some(oid) => oid.to_hex(),
+    None => return Err(status::BadRequest(None))
+  };
+
+  let user_id: Option<String> = match database_connection.get_user(user_email).await {
+    Some(user) => match user.account_type {
+      AccountType::Developer => None,
+      AccountType::Client => match user.oid {
+        Some(oid) => Some(oid.to_hex()),
+        None =>return Err(status::BadRequest(None))
+      },
+    },
+    None => return Err(status::BadRequest(None))
+  };
+
+  flag.hoist(user_id);
+
+  if database_connection.update_feature_flag(&flag_id, flag).await {
+    return Ok(status::Accepted(None))
+  }
+
+  Err(status::BadRequest(None))
 }
 
 /// Gets a product given a name
@@ -194,12 +245,14 @@ async fn create_flag(
 /// Create a user with a given name, email, and password hash
 /// 
 /// # Parameters
-/// * **name**  - Name of the new user
-/// * **email** - Email address for the new user
-/// * **hash**  - Hashed password of the new user
+/// * **account_type** - type of account
+/// * **name**         - Name of the new user
+/// * **email**        - Email address for the new user
+/// * **hash**         - Hashed password of the new user
 #[openapi(tag = "Users")]
-#[post("/create/user/<name>/<email>/<hash>")]
+#[post("/create/user/<name>/<email>/<hash>", data = "<account_type>")]
 async fn create_user(
+  account_type: Json<AccountType>,
   name: &str,
   email: &str,
   hash: &str,
@@ -208,6 +261,7 @@ async fn create_user(
 ) -> Result<status::Created<Json<Created>>, status::BadRequest<()>> {
   let user_builder = User::builder()
     .with_name(name)
+    .with_account_type(account_type.into_inner())
     .with_email(email)
     .with_password_hash(hash);
 
@@ -274,6 +328,7 @@ fn rocket() -> _ {
       openapi_get_routes![
         index,
         check,
+        hoist,
         get_product,
         get_products,
         get_flag,

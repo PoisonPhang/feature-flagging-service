@@ -1,6 +1,7 @@
 //! Data model for Users
 
 use mongodb::bson::oid::ObjectId;
+use rocket_okapi::okapi::schemars::{self, JsonSchema};
 use serde::{Deserialize, Serialize};
 
 /// Data object for users
@@ -11,6 +12,8 @@ pub struct User {
   pub oid: Option<ObjectId>,
   /// User Name
   pub name: String,
+  /// Type of user account
+  pub account_type: AccountType,
   /// User email
   pub email: String,
   /// User password hash
@@ -22,6 +25,7 @@ impl Default for User {
     User {
       oid: Default::default(),
       name: "default_user".to_string(),
+      account_type: AccountType::Client,
       email: "default_user_email".to_string(),
       password_hash: "default_password_hash".to_string(),
     }
@@ -40,6 +44,8 @@ pub struct UserBuilder {
   oid: Option<ObjectId>,
   /// User Name
   name: String,
+  /// Type of user account
+  account_type: AccountType,
   /// User email
   email: String,
   /// User password hash
@@ -53,6 +59,7 @@ impl Default for UserBuilder {
     UserBuilder {
       oid: default_user.oid,
       name: default_user.name,
+      account_type: default_user.account_type,
       email: default_user.email,
       password_hash: default_user.password_hash,
     }
@@ -72,6 +79,11 @@ impl UserBuilder {
 
   pub fn with_name(mut self, name: &str) -> UserBuilder {
     self.name = name.to_string();
+    self
+  }
+
+  pub fn with_account_type(mut self, account_type: AccountType) -> UserBuilder {
+    self.account_type = account_type;
     self
   }
 
@@ -103,8 +115,15 @@ impl UserBuilder {
     User {
       oid: self.oid,
       name: self.name,
+      account_type: self.account_type,
       email: self.email,
       password_hash: self.password_hash,
     }
   }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub enum AccountType {
+  Developer,
+  Client,
 }

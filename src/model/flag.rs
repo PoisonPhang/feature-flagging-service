@@ -20,6 +20,8 @@ pub struct FeatureFlag {
   pub enabled: bool,
   /// If client toggles are enabled
   pub client_toggle: bool,
+  /// List of all users who've disabled the feature
+  pub disabled_for: Vec<String>,
   /// Type of release and relevant data
   pub release_type: ReleaseType,
 }
@@ -32,6 +34,7 @@ impl Default for FeatureFlag {
       product_id: "default_product".to_string(),
       enabled: false,
       client_toggle: false,
+      disabled_for: vec!(),
       release_type: ReleaseType::Global,
     }
   }
@@ -43,57 +46,64 @@ impl FeatureFlag {
     FeatureFlagBuilder::new()
   }
 
+  pub fn hoist(&mut self, user_id: Option<String>) {
+    match user_id {
+      Some(user_id) => {
+        self.disabled_for.retain(|x| x != &user_id)
+      }
+      None => self.enabled = true,
+    }
+  }
+
   /// Evaluates the flag returning true if it is enabled and false otherwise
   ///
   /// Can optionally be provided a user to evaluate with
   ///
   /// # Parameters
-  /// * **user** - *(optional)* User used to evaluate the flag with
-  pub fn evaluate(&self, user: Option<&str>) -> bool {
-    // If no user is provided, only evaluate Global release type as potentially true
-    let user = match user {
-      Some(value) => value,
-      None => {
-        if self.enabled {
-          match &self.release_type {
-            ReleaseType::Global => return true,
-            _ => return false,
+  /// * **user_id** - *(optional)* User used to evaluate the flag with
+  pub fn evaluate(&self, user_id: Option<&str>) -> bool {
+    if !self.enabled {
+      return false
+    }
+
+    match &self.release_type {
+      ReleaseType::Global => {
+        match user_id {
+          Some(user_id) => {
+            if self.disabled_for.contains(&user_id.to_string()) {
+              return false
+            } else {
+              return self.enabled
+            }
           }
+          None => return self.enabled
         }
-        return false;
-      }
-    };
-
-    // Evaluate each release type against the provided user
-    if self.enabled {
-      match &self.release_type {
-        ReleaseType::Global => {
-          return true;
+      },
+      ReleaseType::Limited(allowlist) => {
+        match user_id {
+          Some(user_id) => {
+            if self.disabled_for.contains(&user_id.to_string()) {
+              return false
+            }
+            if allowlist.contains(&user_id.to_string()) {
+              return self.enabled
+            }
+          },
+          None => return false,
         }
-        ReleaseType::Limited(user_states) => match user_states.get(user) {
-          Some(user_state) => {
-            if !self.client_toggle {
-              return true;
+      },
+      ReleaseType::Percentage(_, allowlist) => {
+        match user_id {
+          Some(user_id) => {
+            if self.disabled_for.contains(&user_id.to_string()) {
+              return false
             }
-
-            if *user_state {
-              return true;
-            }
-          }
-          None => {}
-        },
-        ReleaseType::Percentage(_, user_states) => match user_states.get(user) {
-          Some(user_state) => {
-            if !self.client_toggle {
-              return true;
-            }
-
-            if *user_state {
-              return true;
+            if allowlist.contains(&user_id.to_string()) {
+              return self.enabled
             }
           }
-          None => {}
-        },
+          None => return false,
+        }
       }
     }
 
@@ -143,6 +153,8 @@ pub struct FeatureFlagBuilder {
   pub enabled: bool,
   /// If client toggles are enabled
   pub client_toggle: bool,
+  /// List of all users who've disabled the feature
+  pub disabled_for: Vec<String>,
   /// Type of release and relevant data
   pub release_type: ReleaseType,
 }
@@ -157,6 +169,7 @@ impl Default for FeatureFlagBuilder {
       product_id: default_flag.product_id,
       enabled: default_flag.enabled,
       client_toggle: default_flag.client_toggle,
+      disabled_for: default_flag.disabled_for,
       release_type: default_flag.release_type,
     }
   }
@@ -192,6 +205,11 @@ impl FeatureFlagBuilder {
     self
   }
 
+  pub fn with_disabled_for(mut self, disabled_for: Vec<String>) -> FeatureFlagBuilder {
+    self.disabled_for = disabled_for;
+    self
+  }
+
   pub fn with_release_type(mut self, release_type: ReleaseType) -> FeatureFlagBuilder {
     self.release_type = release_type;
     self
@@ -204,6 +222,7 @@ impl FeatureFlagBuilder {
       product_id: self.product_id,
       enabled: self.enabled,
       client_toggle: self.client_toggle,
+      disabled_for: self.disabled_for,
       release_type: self.release_type,
     }
   }
@@ -214,12 +233,10 @@ impl FeatureFlagBuilder {
 /// Release types contain relevant information to the type of release
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum ReleaseType {
-  /// Release is global, only controlled by the `FeatureFlag`'s `enabled` property
+  /// Release is global
   Global,
-  /// Release is limited, limited to a specified `HashMap<String, bool>` where the key is a user ID and the value is
-  /// the enabled status
-  Limited(HashMap<String, bool>),
-  /// Release is percentage, limited to a specified percentage of users contained in the specified `HashMap<String,
-  /// bool>`
-  Percentage(f32, HashMap<String, bool>),
+  /// Release is limited, contains an allowlist of users
+  Limited(Vec<String>),
+  /// Release is percentage, contains a percentage and allowlist
+  Percentage(f32, Vec<String>),
 }

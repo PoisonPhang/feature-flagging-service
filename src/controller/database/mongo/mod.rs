@@ -84,6 +84,19 @@ pub async fn get_feature_flags(product_id: &str) -> error::Result<Vec<FeatureFla
   Ok(feature_flags)
 }
 
+pub async fn update_feature_flag(feature_flag_id: ObjectId, updated: FeatureFlag) -> error::Result<()> {
+  let client = get_client().await?;
+
+  let db = client.database("data");
+  let features_collection = db.collection::<FeatureFlag>("features");
+
+  let query = doc! {"_id": feature_flag_id};
+
+  features_collection.replace_one(query, updated, None).await?;
+
+  Ok(())
+}
+
 /// Given a user email, this will search for and return a fully constructed `User` from MongoDB wrapped inside of a
 /// `Result`.
 ///

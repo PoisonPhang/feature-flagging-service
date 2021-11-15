@@ -2,6 +2,8 @@
 
 use dotenv;
 
+use mongodb::bson::oid::ObjectId;
+
 use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
 use crate::model::product::{Product, ProductBuilder};
 use crate::model::user::{User, UserBuilder};
@@ -103,6 +105,22 @@ impl ConnectionManager {
           return vec![]
         }
       },
+    }
+  }
+
+  pub async fn update_feature_flag(&self, feature_flag_id: &str, updated: FeatureFlag) -> bool {
+    match &self.connection_type {
+      ConnectionType::MongoDB => {
+        let id: ObjectId = match ObjectId::parse_str(feature_flag_id) {
+          Ok(id) => id,
+          Err(_) => return false,
+        };
+
+        match mongo::update_feature_flag(id, updated).await {
+          Ok(_) => return true,
+          Err(e) => return false,
+        };
+      }
     }
   }
 
