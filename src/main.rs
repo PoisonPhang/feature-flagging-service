@@ -73,7 +73,7 @@ async fn check(
 /// * **feature**    - Name of the feature
 /// * **user_email** - email of the user hoisting the flag
 #[openapi(tag = "Flags")]
-#[get("/hoist/<product_id>/<feature>/<user_email>")]
+#[patch("/hoist/<product_id>/<feature>/<user_email>")]
 async fn hoist(
   product_id: &str,
   feature: &str,
