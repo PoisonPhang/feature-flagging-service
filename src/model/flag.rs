@@ -1,7 +1,5 @@
 //! Data model structures of the Feature Flag
 
-use std::collections::HashMap;
-
 use mongodb::bson::oid::ObjectId;
 use rocket_okapi::okapi::schemars::{self, JsonSchema};
 use serde::{Deserialize, Serialize};
