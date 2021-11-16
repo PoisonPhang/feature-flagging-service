@@ -12,15 +12,15 @@ use rocket::http::{Cookie, CookieJar};
 use rocket::response::status;
 use rocket::serde::json::Json;
 use rocket::State;
-use rocket_okapi::{openapi, openapi_get_routes};
 use rocket_okapi::swagger_ui::{self, SwaggerUIConfig};
+use rocket_okapi::{openapi, openapi_get_routes};
 
 use controller::authentication::{AuthTokens, UserAuth};
 use controller::database::ConnectionManager;
 use controller::response::{Created, FlagCheck};
 use model::flag::{FeatureFlag, ReleaseType, SpecSafeFeatureFlag};
 use model::product::{Product, SpecSafeProduct};
-use model::user::{User, AccountType};
+use model::user::{AccountType, SpecSafeUser, User};
 
 const USER_ID: &str = "user_id";
 const AUTH_TOKEN: &str = "auth_token";
@@ -60,14 +60,14 @@ async fn check(
 }
 
 /// Hoist a flag!
-/// 
-/// If the user is a `AccountType::Developer` then the flag is enabled globally
-/// 
-/// If the user is a `AccountType::Client` then the flag is enabled for that user.
+///
+/// If the user is a `AccountType::Developer` then the flag is **enabled** globally
+///
+/// If the user is a `AccountType::Client` then the flag is **enabled** for that user.
 /// The user will still need to have access to the flag
-/// 
+///
 /// Returns 400 if something goes wrong, 202 otherwise
-/// 
+///
 /// # Parameters
 /// * **product_id** - Unique ID of the product
 /// * **feature**    - Name of the feature
@@ -87,74 +87,139 @@ async fn hoist(
 
   let flag_id = match flag.oid {
     Some(oid) => oid.to_hex(),
-    None => return Err(status::BadRequest(None))
+    None => return Err(status::BadRequest(None)),
   };
 
-  let user_id: Option<String> = match database_connection.get_user(user_email).await {
+  let user_id: Option<String> = match database_connection.get_user(Some(user_email), None).await {
     Some(user) => match user.account_type {
       AccountType::Developer => None,
       AccountType::Client => match user.oid {
         Some(oid) => Some(oid.to_hex()),
-        None =>return Err(status::BadRequest(None))
+        None => return Err(status::BadRequest(None)),
       },
     },
-    None => return Err(status::BadRequest(None))
+    None => return Err(status::BadRequest(None)),
   };
 
   flag.hoist(user_id);
 
   if database_connection.update_feature_flag(&flag_id, flag).await {
-    return Ok(status::Accepted(None))
+    return Ok(status::Accepted(None));
+  }
+
+  Err(status::BadRequest(None))
+}
+
+/// Lower a flag
+///
+/// If the user is a `AccountType::Developer` then the flag is **disabled** globally
+///
+/// If the user is a `AccountType::Client` then the flag is **disabled** for that user.
+/// The user will still need to have access to the flag
+///
+/// Returns 400 if something goes wrong, 202 otherwise
+///
+/// # Parameters
+/// * **product_id** - Unique ID of the product
+/// * **feature**    - Name of the feature
+/// * **user_email** - email of the user lowering the flag
+#[openapi(tag = "Flags")]
+#[patch("/lower/<product_id>/<feature>/<user_email>")]
+async fn lower(
+  product_id: &str,
+  feature: &str,
+  user_email: &str,
+  database_connection: &State<ConnectionManager>,
+) -> Result<status::Accepted<()>, status::BadRequest<()>> {
+  let mut flag = match database_connection.get_feature_flag(product_id, feature).await {
+    Some(flag) => flag,
+    None => return Err(status::BadRequest(None)),
+  };
+
+  let flag_id = match flag.oid {
+    Some(oid) => oid.to_hex(),
+    None => return Err(status::BadRequest(None)),
+  };
+
+  let user_id: Option<String> = match database_connection.get_user(Some(user_email), None).await {
+    Some(user) => match user.account_type {
+      AccountType::Developer => None,
+      AccountType::Client => match user.oid {
+        Some(oid) => Some(oid.to_hex()),
+        None => return Err(status::BadRequest(None)),
+      },
+    },
+    None => return Err(status::BadRequest(None)),
+  };
+
+  flag.lower(user_id);
+
+  if database_connection.update_feature_flag(&flag_id, flag).await {
+    return Ok(status::Accepted(None));
   }
 
   Err(status::BadRequest(None))
 }
 
 /// Gets a product given a name
-/// 
+///
 /// Will return 404 if no product with the given name is found
-/// 
+///
 /// # Parameters
 /// * **name** - Name of the product
 #[openapi(tag = "Products")]
 #[get("/get/product/<name>")]
-async fn get_product(name: &str, database_connection: &State<ConnectionManager>) -> Result<Json<SpecSafeProduct>, status::NotFound<()>> {
+async fn get_product(
+  name: &str,
+  database_connection: &State<ConnectionManager>,
+) -> Result<Json<SpecSafeProduct>, status::NotFound<()>> {
   let product = match database_connection.get_product(name).await {
     Some(product) => product,
-    None => return Err(status::NotFound(()))
+    None => return Err(status::NotFound(())),
   };
 
   Ok(Json(product.get_spec_safe_product()))
 }
 
 /// Gets all products that a user consumes
-/// 
+///
 /// If no products are found - this will return an empty list
-/// 
+///
 /// # Parameters
 /// * **user_email** - email of a given user
 #[openapi(tag = "Products")]
 #[get("/get/products/<user_email>")]
 async fn get_products(user_email: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<SpecSafeProduct>> {
-  let user = match database_connection.get_user(user_email).await {
+  let user = match database_connection.get_user(Some(user_email), None).await {
     Some(value) => value,
-    None => return Json(vec!()),
+    None => return Json(vec![]),
   };
 
   let user_id = match user.oid.clone() {
     Some(oid) => oid,
-    None => return Json(vec!()),
+    None => return Json(vec![]),
   };
 
-  Json(database_connection.get_products(&user_id.to_hex()).await.iter().map(|x| x.get_spec_safe_product()).collect::<Vec<SpecSafeProduct>>())
+  Json(
+    database_connection
+      .get_products(&user_id.to_hex())
+      .await
+      .iter()
+      .map(|x| x.get_spec_safe_product())
+      .collect::<Vec<SpecSafeProduct>>(),
+  )
 }
 
 #[openapi(tag = "Flags")]
 #[get("/get/flag/<name>/<product_id>")]
-async fn get_flag(name: &str, product_id: &str, database_connection: &State<ConnectionManager>) -> Result<Json<SpecSafeFeatureFlag>, status::NotFound<()>> {
+async fn get_flag(
+  name: &str,
+  product_id: &str,
+  database_connection: &State<ConnectionManager>,
+) -> Result<Json<SpecSafeFeatureFlag>, status::NotFound<()>> {
   let flag = match database_connection.get_feature_flag(product_id, name).await {
     Some(flag) => flag,
-    None => return Err(status::NotFound(()))
+    None => return Err(status::NotFound(())),
   };
 
   Ok(Json(flag.get_spec_safe_feature_flag()))
@@ -163,13 +228,34 @@ async fn get_flag(name: &str, product_id: &str, database_connection: &State<Conn
 #[openapi(tag = "Flags")]
 #[get("/get/flags/<product_id>")]
 async fn get_flags(product_id: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<SpecSafeFeatureFlag>> {
-  Json(database_connection.get_feature_flags(product_id).await.iter().map(|x| x.get_spec_safe_feature_flag()).collect::<Vec<SpecSafeFeatureFlag>>())
+  Json(
+    database_connection
+      .get_feature_flags(product_id)
+      .await
+      .iter()
+      .map(|x| x.get_spec_safe_feature_flag())
+      .collect::<Vec<SpecSafeFeatureFlag>>(),
+  )
+}
+
+#[openapi(tag = "Users")]
+#[get("/get/user/<user_id>")]
+async fn get_user(
+  user_id: &str,
+  database_connection: &State<ConnectionManager>,
+) -> Result<Json<SpecSafeUser>, status::NotFound<()>> {
+  let user = match database_connection.get_user(None, Some(user_id)).await {
+    Some(user) => user,
+    None => return Err(status::NotFound(())),
+  };
+
+  return Ok(Json(user.get_spec_safe_user()));
 }
 
 /// Create a product with a given name
 ///
 /// Can provide a list of initial users (by user ID) for the product
-/// 
+///
 /// # Parameters
 /// * **name**  - Name of the new product
 /// * **users** - List of initial users (send empty list if none are desired)
@@ -201,7 +287,7 @@ async fn create_product(
 /// The `client_toggle` enum determines if the flag can be toggled by clients
 ///
 /// Leaving release type undefined will have it default to `Global`
-/// 
+///
 /// # Parameters
 /// * **name**          - Name of the new feature flag
 /// * **product_id**    - Unique ID of product the flag belongs to
@@ -243,7 +329,7 @@ async fn create_flag(
 }
 
 /// Create a user with a given name, email, and password hash
-/// 
+///
 /// # Parameters
 /// * **account_type** - type of account
 /// * **name**         - Name of the new user
@@ -279,7 +365,7 @@ async fn create_user(
 }
 
 /// Login as a user
-/// 
+///
 /// # Parameters
 /// * **email** - email of the user being logged in
 /// * **hash**  - Hashed password of the user being logged in
@@ -292,7 +378,7 @@ async fn login(
   auth_tokens_mut: &State<Arc<Mutex<AuthTokens>>>,
   jar: &CookieJar<'_>,
 ) -> Result<status::Accepted<()>, status::BadRequest<String>> {
-  let user = match database_connection.get_user(email).await {
+  let user = match database_connection.get_user(Some(email), None).await {
     Some(value) => value,
     None => return Err(status::BadRequest(Some(format!("User {} not found", email)))),
   };
@@ -329,10 +415,12 @@ fn rocket() -> _ {
         index,
         check,
         hoist,
+        lower,
         get_product,
         get_products,
         get_flag,
         get_flags,
+        get_user,
         create_product,
         create_flag,
         create_user,

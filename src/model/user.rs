@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// Data object for users
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-  /// String generated my MongoDB
+  /// Unique ID of user
   #[serde(alias = "_id", skip_serializing_if = "Option::is_none")]
   pub oid: Option<ObjectId>,
   /// User Name
@@ -36,6 +36,30 @@ impl User {
   pub fn builder() -> UserBuilder {
     UserBuilder::new()
   }
+
+  pub fn get_spec_safe_user(&self) -> SpecSafeUser {
+    SpecSafeUser {
+      oid: match self.oid {
+        Some(oid) => oid.to_hex(),
+        None => ObjectId::default().to_hex(),
+      },
+      name: self.name.clone(),
+      account_type: self.account_type.clone(),
+      email: self.email.clone(),
+    }
+  }
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SpecSafeUser {
+  /// Unique ID of user
+  pub oid: String,
+  /// User Name
+  pub name: String,
+  /// Type of user account
+  pub account_type: AccountType,
+  /// User email
+  pub email: String,
 }
 
 #[derive(Clone)]

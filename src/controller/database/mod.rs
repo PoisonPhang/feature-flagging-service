@@ -102,7 +102,7 @@ impl ConnectionManager {
             "Error getting features for product_id '{}'. Returning empty Vec. Error: {:?}",
             product_id, e
           );
-          return vec![]
+          return vec![];
         }
       },
     }
@@ -127,14 +127,21 @@ impl ConnectionManager {
   /// Given a product id, and flag name, returns a fully constructed `User`
   ///
   /// Returns `User` inside of an `Option<User>`. If anything goes wrong, this function will return `None`
-  pub async fn get_user(&self, user_email: &str) -> Option<User> {
+  pub async fn get_user(&self, user_email: Option<&str>, user_id: Option<&str>) -> Option<User> {
+    if user_email.is_none() && user_id.is_none() {
+      println!("Error getting user, must provide at least one `user_email` or `user_id`");
+      return None;
+    }
+
     match &self.connection_type {
-      ConnectionType::MongoDB => match mongo::get_user(user_email).await {
+      ConnectionType::MongoDB => match mongo::get_user(user_email, user_id).await {
         Ok(user) => return user,
         Err(e) => {
           println!(
-            "Error getting user from email '{}'. Returning Option::None. Error: {:?}",
-            user_email, e
+            "Error getting user from email '{}' and/or id '{}'. Returning Option::None. Error: {:?}",
+            user_email.unwrap_or("[Not Provided]"),
+            user_id.unwrap_or("[Not Provided]"),
+            e
           );
           return None;
         }

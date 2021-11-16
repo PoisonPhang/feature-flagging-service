@@ -34,7 +34,7 @@ impl Default for FeatureFlag {
       product_id: "default_product".to_string(),
       enabled: false,
       client_toggle: false,
-      disabled_for: vec!(),
+      disabled_for: vec![],
       release_type: ReleaseType::Global,
     }
   }
@@ -48,10 +48,15 @@ impl FeatureFlag {
 
   pub fn hoist(&mut self, user_id: Option<String>) {
     match user_id {
-      Some(user_id) => {
-        self.disabled_for.retain(|x| x != &user_id)
-      }
+      Some(user_id) => self.disabled_for.retain(|x| x != &user_id),
       None => self.enabled = true,
+    }
+  }
+
+  pub fn lower(&mut self, user_id: Option<String>) {
+    match user_id {
+      Some(user_id) => self.disabled_for.push(user_id),
+      None => self.enabled = false,
     }
   }
 
@@ -63,48 +68,42 @@ impl FeatureFlag {
   /// * **user_id** - *(optional)* User used to evaluate the flag with
   pub fn evaluate(&self, user_id: Option<&str>) -> bool {
     if !self.enabled {
-      return false
+      return false;
     }
 
     match &self.release_type {
-      ReleaseType::Global => {
-        match user_id {
-          Some(user_id) => {
-            if self.disabled_for.contains(&user_id.to_string()) {
-              return false
-            } else {
-              return self.enabled
-            }
+      ReleaseType::Global => match user_id {
+        Some(user_id) => {
+          if self.disabled_for.contains(&user_id.to_string()) {
+            return false;
+          } else {
+            return self.enabled;
           }
-          None => return self.enabled
         }
+        None => return self.enabled,
       },
-      ReleaseType::Limited(allowlist) => {
-        match user_id {
-          Some(user_id) => {
-            if self.disabled_for.contains(&user_id.to_string()) {
-              return false
-            }
-            if allowlist.contains(&user_id.to_string()) {
-              return self.enabled
-            }
-          },
-          None => return false,
-        }
-      },
-      ReleaseType::Percentage(_, allowlist) => {
-        match user_id {
-          Some(user_id) => {
-            if self.disabled_for.contains(&user_id.to_string()) {
-              return false
-            }
-            if allowlist.contains(&user_id.to_string()) {
-              return self.enabled
-            }
+      ReleaseType::Limited(allowlist) => match user_id {
+        Some(user_id) => {
+          if self.disabled_for.contains(&user_id.to_string()) {
+            return false;
           }
-          None => return false,
+          if allowlist.contains(&user_id.to_string()) {
+            return self.enabled;
+          }
         }
-      }
+        None => return false,
+      },
+      ReleaseType::Percentage(_, allowlist) => match user_id {
+        Some(user_id) => {
+          if self.disabled_for.contains(&user_id.to_string()) {
+            return false;
+          }
+          if allowlist.contains(&user_id.to_string()) {
+            return self.enabled;
+          }
+        }
+        None => return false,
+      },
     }
 
     false

@@ -32,7 +32,7 @@ pub async fn get_product(product_name: &str) -> error::Result<Option<Product>> {
 
 pub async fn get_products(user_id: &str) -> error::Result<Vec<Product>> {
   let client = get_client().await?;
-  let mut products: Vec<Product> = vec!();
+  let mut products: Vec<Product> = vec![];
 
   let db = client.database("data");
   let product_collection = db.collection::<Product>("products");
@@ -68,7 +68,7 @@ pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> error::Resul
 
 pub async fn get_feature_flags(product_id: &str) -> error::Result<Vec<FeatureFlag>> {
   let client = get_client().await?;
-  let mut feature_flags:Vec<FeatureFlag> = vec!(); 
+  let mut feature_flags: Vec<FeatureFlag> = vec![];
 
   let db = client.database("data");
   let features_collection = db.collection::<FeatureFlag>("features");
@@ -104,13 +104,27 @@ pub async fn update_feature_flag(feature_flag_id: ObjectId, updated: FeatureFlag
 ///
 /// ## Result Error
 /// `Result` can contain a MongoDB specific error
-pub async fn get_user(user_email: &str) -> error::Result<Option<User>> {
+pub async fn get_user(user_email: Option<&str>, user_id: Option<&str>) -> error::Result<Option<User>> {
   let client = get_client().await?;
 
   let db = client.database("data");
   let user_collection = db.collection::<User>("users");
 
-  let filter = doc! {"email": user_email };
+  let mut filter = doc!();
+
+  match user_email {
+    Some(email) => {
+      filter.insert("email", email);
+    }
+    None => (),
+  }
+
+  match user_id {
+    Some(id) => {
+      filter.insert("_id", ObjectId::parse_str(id).unwrap_or(Default::default()));
+    }
+    None => (),
+  }
 
   user_collection.find_one(filter, None).await
 }
@@ -126,7 +140,7 @@ pub async fn create_product(product_builder: ProductBuilder) -> error::Result<Pr
     .await?
     .inserted_id
     .as_object_id()
-    .unwrap_or_else(|| ObjectId::default());
+    .unwrap_or(ObjectId::default());
 
   let product = product_builder.with_oid(product_id).build();
 
@@ -144,7 +158,7 @@ pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> error::Result<Feat
     .await?
     .inserted_id
     .as_object_id()
-    .unwrap_or_else(|| ObjectId::default());
+    .unwrap_or(ObjectId::default());
 
   let flag = flag_builder.with_oid(flag_id).build();
 
