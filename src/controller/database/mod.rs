@@ -118,7 +118,10 @@ impl ConnectionManager {
 
         match mongo::update_feature_flag(id, updated).await {
           Ok(_) => return true,
-          Err(e) => return false,
+          Err(e) => {
+            println!("Error updating feature flag. Error: {:?}", e);
+            return false
+          },
         };
       }
     }

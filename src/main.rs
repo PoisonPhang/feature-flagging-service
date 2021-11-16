@@ -279,7 +279,7 @@ async fn create_product(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new("").body(Json(Created::new(&product_id.to_hex()))))
+  Ok(status::Created::new(format!("/get/product/{}", product.name)).body(Json(Created::new(&product_id.to_hex()))))
 }
 
 /// Create a flag with a given name, status, the `client_toggle` enum, and release type
@@ -325,7 +325,7 @@ async fn create_flag(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new("").body(Json(Created::new(&flag_id.to_hex()))))
+  Ok(status::Created::new(format!("/get/flag/{}/{}", flag.name, flag.product_id)).body(Json(Created::new(&flag_id.to_hex()))))
 }
 
 /// Create a user with a given name, email, and password hash
@@ -361,7 +361,7 @@ async fn create_user(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new("").body(Json(Created::new(&user_id.to_hex()))))
+  Ok(status::Created::new(format!("/get/user/{}", &user_id.to_hex())).body(Json(Created::new(&user_id.to_hex()))))
 }
 
 /// Login as a user
