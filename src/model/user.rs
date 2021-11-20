@@ -151,3 +151,35 @@ pub enum AccountType {
   Developer,
   Client,
 }
+
+const CLIENT: &str = "Client";
+const DEVELOPER: &str = "Developer";
+
+impl std::convert::From<String> for AccountType {
+  fn from(other: String) -> Self {
+    match other.as_str() {
+      CLIENT => {
+        return Self::Client
+      },
+      DEVELOPER => {
+        return Self::Developer
+      }
+      &_ => {
+        return Self::Client
+      }
+    }
+  }
+}
+
+impl std::convert::Into<mongodb::bson::Bson> for AccountType {
+  fn into(self) -> mongodb::bson::Bson { 
+    match self {
+      Self::Client => {
+        return mongodb::bson::Bson::String(CLIENT.to_string())
+      },
+      Self::Developer => {
+        return mongodb::bson::Bson::String(DEVELOPER.to_string())
+      }
+    }
+  }
+}

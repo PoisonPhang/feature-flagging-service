@@ -6,7 +6,7 @@ use mongodb::bson::oid::ObjectId;
 
 use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
 use crate::model::product::{Product, ProductBuilder};
-use crate::model::user::{User, UserBuilder};
+use crate::model::user::{AccountType, User, UserBuilder};
 
 pub mod mongo;
 
@@ -149,6 +149,18 @@ impl ConnectionManager {
           return None;
         }
       },
+    }
+  }
+
+  pub async fn get_users(&self, account_type: Option<AccountType>) -> Vec<User> {
+    match &self.connection_type {
+      ConnectionType::MongoDB => match mongo::get_users(account_type).await {
+        Ok(users) => return users,
+        Err(e) => {
+          println!("Error getting users. Returning empty list: Error: {:?}", e);
+          return vec!()
+        }
+      }
     }
   }
 

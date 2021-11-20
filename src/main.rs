@@ -252,6 +252,20 @@ async fn get_user(
   return Ok(Json(user.get_spec_safe_user()));
 }
 
+#[openapi(tag = "Users")]
+#[get("/get/users/<account_type>")]
+async fn get_users(
+  account_type: Option<String>,
+  database_connection: &State<ConnectionManager>,
+) -> Json<Vec<SpecSafeUser>> {
+  let users = match account_type {
+    Some(account_type) => database_connection.get_users(Some(AccountType::from(account_type))).await,
+    None =>  database_connection.get_users(None).await
+  };
+
+  return Json(users.iter().map(|x| x.get_spec_safe_user()).collect::<Vec<SpecSafeUser>>())
+}
+
 /// Create a product with a given name
 ///
 /// Can provide a list of initial users (by user ID) for the product
@@ -421,6 +435,7 @@ fn rocket() -> _ {
         get_flag,
         get_flags,
         get_user,
+        get_users,
         create_product,
         create_flag,
         create_user,

@@ -10,7 +10,7 @@ use mongodb::Client;
 
 use crate::model::flag::{FeatureFlag, FeatureFlagBuilder};
 use crate::model::product::{Product, ProductBuilder};
-use crate::model::user::{User, UserBuilder};
+use crate::model::user::{AccountType, User, UserBuilder};
 
 /// Given a product name, this will search for and return a fully constructed `Product` from MongoDB wrapped inside of a
 /// `Result`.
@@ -127,6 +127,31 @@ pub async fn get_user(user_email: Option<&str>, user_id: Option<&str>) -> error:
   }
 
   user_collection.find_one(filter, None).await
+}
+
+pub async fn get_users(account_type: Option<AccountType>) -> error::Result<Vec<User>> {
+  let client = get_client().await?;
+  let mut users: Vec<User> = vec!();
+
+  let db = client.database("data");
+  let user_collection = db.collection::<User>("users");
+
+  let mut filter = doc!();
+
+  match account_type {
+    Some(account_type) => {
+      filter.insert("account_type", account_type);
+    }
+    None => (),
+  }
+
+  let mut cursor = user_collection.find(filter, None).await?;
+
+  while let Some(user) = cursor.try_next().await? {
+    users.push(user);
+  }
+
+  return Ok(users)
 }
 
 pub async fn create_product(product_builder: ProductBuilder) -> error::Result<Product> {
