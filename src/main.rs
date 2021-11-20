@@ -350,9 +350,9 @@ async fn create_flag(
 /// * **email**        - Email address for the new user
 /// * **hash**         - Hashed password of the new user
 #[openapi(tag = "Users")]
-#[post("/create/user/<name>/<email>/<hash>", data = "<account_type>")]
+#[post("/create/user/<name>/<email>/<hash>/<account_type>")]
 async fn create_user(
-  account_type: Json<AccountType>,
+  account_type: String,
   name: &str,
   email: &str,
   hash: &str,
@@ -361,7 +361,7 @@ async fn create_user(
 ) -> Result<status::Created<Json<Created>>, status::BadRequest<()>> {
   let user_builder = User::builder()
     .with_name(name)
-    .with_account_type(account_type.into_inner())
+    .with_account_type(AccountType::from(account_type))
     .with_email(email)
     .with_password_hash(hash);
 
