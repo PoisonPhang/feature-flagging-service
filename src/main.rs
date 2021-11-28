@@ -195,7 +195,7 @@ async fn get_products(user_email: &str, database_connection: &State<ConnectionMa
     None => return Json(vec![]),
   };
 
-  let user_id = match user.oid.clone() {
+  let user_id = match user.oid {
     Some(oid) => oid,
     None => return Json(vec![]),
   };
@@ -249,7 +249,7 @@ async fn get_user(
     None => return Err(status::NotFound(())),
   };
 
-  return Ok(Json(user.get_spec_safe_user()));
+  Ok(Json(user.get_spec_safe_user()))
 }
 
 #[openapi(tag = "Users")]
@@ -370,7 +370,7 @@ async fn create_user(
     None => return Err(status::BadRequest(None)),
   };
 
-  let user_id = match user.oid.clone() {
+  let user_id = match user.oid {
     Some(oid) => oid,
     None => return Err(status::BadRequest(None)),
   };
@@ -403,7 +403,7 @@ async fn login(
       Err(poisoned) => poisoned.into_inner(), // recover from poisoned mutex
     };
 
-    let user_id = match user.oid.clone() {
+    let user_id = match user.oid {
       Some(oid) => oid,
       None => return Err(status::BadRequest(None)),
     };
