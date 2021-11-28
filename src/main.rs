@@ -1,4 +1,4 @@
-//! Currently being used for testing
+//! API and server endpoints
 
 #[macro_use]
 extern crate rocket;
