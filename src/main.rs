@@ -28,7 +28,7 @@ const AUTH_TOKEN: &str = "auth_token";
 #[openapi(skip)]
 #[get("/")]
 async fn index() -> String {
-  format!("Not 404, we just don't have a page yet")
+  "Not 404, we just don't have a page yet".to_string()
 }
 
 /// Checks a product's flag to see if it is enabled
