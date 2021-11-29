@@ -210,6 +210,13 @@ async fn get_products(user_email: &str, database_connection: &State<ConnectionMa
   )
 }
 
+/// Gets a feature flag given a flag name and product ID
+///
+/// Will return 404 if no flag is found matching the search
+///
+/// # Parameters
+/// * **name**       - name of the feature flag
+/// * **product_id** - unique ID of the flag's product
 #[openapi(tag = "Flags")]
 #[get("/get/flag/<name>/<product_id>")]
 async fn get_flag(
@@ -225,6 +232,12 @@ async fn get_flag(
   Ok(Json(flag.get_spec_safe_feature_flag()))
 }
 
+/// Gets all feature flags belonging to a product specified by product ID
+///
+/// Will return an empty list if no flags are found
+///
+/// # Paramaters
+/// * **product_id** - unique ID of the product
 #[openapi(tag = "Flags")]
 #[get("/get/flags/<product_id>")]
 async fn get_flags(product_id: &str, database_connection: &State<ConnectionManager>) -> Json<Vec<SpecSafeFeatureFlag>> {
