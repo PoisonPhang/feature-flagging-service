@@ -131,7 +131,7 @@ impl ConnectionManager {
           Err(e) => {
             println!("Error updating feature flag. Error: {:?}", e);
             false
-          },
+          }
         }
       }
     }
@@ -169,9 +169,9 @@ impl ConnectionManager {
         Ok(users) => users,
         Err(e) => {
           println!("Error getting users. Returning empty list: Error: {:?}", e);
-          return vec!()
+          return vec![];
         }
-      }
+      },
     }
   }
 

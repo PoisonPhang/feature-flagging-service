@@ -272,11 +272,20 @@ async fn get_users(
   database_connection: &State<ConnectionManager>,
 ) -> Json<Vec<SpecSafeUser>> {
   let users = match account_type {
-    Some(account_type) => database_connection.get_users(Some(AccountType::from(account_type))).await,
-    None =>  database_connection.get_users(None).await
+    Some(account_type) => {
+      database_connection
+        .get_users(Some(AccountType::from(account_type)))
+        .await
+    }
+    None => database_connection.get_users(None).await,
   };
 
-  return Json(users.iter().map(|x| x.get_spec_safe_user()).collect::<Vec<SpecSafeUser>>())
+  return Json(
+    users
+      .iter()
+      .map(|x| x.get_spec_safe_user())
+      .collect::<Vec<SpecSafeUser>>(),
+  );
 }
 
 /// Create a product with a given name
@@ -352,7 +361,10 @@ async fn create_flag(
     None => return Err(status::BadRequest(None)),
   };
 
-  Ok(status::Created::new(format!("/get/flag/{}/{}", flag.name, flag.product_id)).body(Json(Created::new(&flag_id.to_hex()))))
+  Ok(
+    status::Created::new(format!("/get/flag/{}/{}", flag.name, flag.product_id))
+      .body(Json(Created::new(&flag_id.to_hex()))),
+  )
 }
 
 /// Create a user with a given name, email, and password hash
