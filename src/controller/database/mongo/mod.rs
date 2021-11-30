@@ -30,6 +30,9 @@ pub async fn get_product(product_name: &str) -> error::Result<Option<Product>> {
   product_collection.find_one(filter, None).await
 }
 
+/// Gets a `Vec<Product>` given a user_id
+///
+/// Returns all products consumed by the user
 pub async fn get_products(user_id: &str) -> error::Result<Vec<Product>> {
   let client = get_client().await?;
   let mut products: Vec<Product> = vec![];
@@ -66,6 +69,9 @@ pub async fn get_feature_flag(product_id: &str, flag_name: &str) -> error::Resul
   features_collection.find_one(filter, None).await
 }
 
+/// Gets a `Vec<FeatureFlag>` given a product_id
+///
+/// Returns all feature flags belonging to the product
 pub async fn get_feature_flags(product_id: &str) -> error::Result<Vec<FeatureFlag>> {
   let client = get_client().await?;
   let mut feature_flags: Vec<FeatureFlag> = vec![];
@@ -84,6 +90,9 @@ pub async fn get_feature_flags(product_id: &str) -> error::Result<Vec<FeatureFla
   Ok(feature_flags)
 }
 
+/// Updates a feature_flag of the given ID with the `updated` `FeatureFlag` struct
+///
+/// Returns a result indicating success
 pub async fn update_feature_flag(feature_flag_id: ObjectId, updated: FeatureFlag) -> error::Result<()> {
   let client = get_client().await?;
 
@@ -112,37 +121,29 @@ pub async fn get_user(user_email: Option<&str>, user_id: Option<&str>) -> error:
 
   let mut filter = doc!();
 
-  match user_email {
-    Some(email) => {
-      filter.insert("email", email);
-    }
-    None => (),
+  if let Some(email) = user_email {
+    filter.insert("email", email);
   }
 
-  match user_id {
-    Some(id) => {
-      filter.insert("_id", ObjectId::parse_str(id).unwrap_or(Default::default()));
-    }
-    None => (),
+  if let Some(id) = user_id {
+    filter.insert("_id", ObjectId::parse_str(id).unwrap_or_default());
   }
 
   user_collection.find_one(filter, None).await
 }
 
+/// Gets a `Vec<User>` optinally given an account_type
 pub async fn get_users(account_type: Option<AccountType>) -> error::Result<Vec<User>> {
   let client = get_client().await?;
-  let mut users: Vec<User> = vec!();
+  let mut users: Vec<User> = vec![];
 
   let db = client.database("data");
   let user_collection = db.collection::<User>("users");
 
   let mut filter = doc!();
 
-  match account_type {
-    Some(account_type) => {
-      filter.insert("account_type", account_type);
-    }
-    None => (),
+  if let Some(account_type) = &account_type {
+    filter.insert("account_type", account_type);
   }
 
   let mut cursor = user_collection.find(filter, None).await?;
@@ -151,9 +152,10 @@ pub async fn get_users(account_type: Option<AccountType>) -> error::Result<Vec<U
     users.push(user);
   }
 
-  return Ok(users)
+  Ok(users)
 }
 
+/// Creates a product given a builder and returns a fully constructed product
 pub async fn create_product(product_builder: ProductBuilder) -> error::Result<Product> {
   let client = get_client().await?;
 
@@ -165,13 +167,14 @@ pub async fn create_product(product_builder: ProductBuilder) -> error::Result<Pr
     .await?
     .inserted_id
     .as_object_id()
-    .unwrap_or(ObjectId::default());
+    .unwrap_or_default();
 
   let product = product_builder.with_oid(product_id).build();
 
   Ok(product)
 }
 
+/// Creates a new feature flag given a builder and returns a fully constructed flag
 pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> error::Result<FeatureFlag> {
   let client = get_client().await?;
 
@@ -183,7 +186,7 @@ pub async fn create_flag(flag_builder: FeatureFlagBuilder) -> error::Result<Feat
     .await?
     .inserted_id
     .as_object_id()
-    .unwrap_or(ObjectId::default());
+    .unwrap_or_default();
 
   let flag = flag_builder.with_oid(flag_id).build();
 
@@ -207,7 +210,7 @@ pub async fn create_user(user_builder: UserBuilder) -> error::Result<User> {
     .await?
     .inserted_id
     .as_object_id()
-    .unwrap_or_else(|| ObjectId::default());
+    .unwrap_or_default();
 
   let user = user_builder.with_oid(user_id).build();
 
