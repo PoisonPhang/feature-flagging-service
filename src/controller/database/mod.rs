@@ -48,22 +48,25 @@ impl ConnectionManager {
   pub async fn get_product(&self, product_name: &str) -> Option<Product> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_product(product_name).await {
-        Ok(product) => return product,
+        Ok(product) => product,
         Err(e) => {
           println!(
             "Error getting product '{}'. Returning Option::None. Error {:?}",
             product_name, e
           );
-          return None;
+          None
         }
       },
     }
   }
 
+  /// Given a user ID, returns a lit of products consumed by the user
+  ///
+  /// Will return an empty `Vec<Product>` if no results are found
   pub async fn get_products(&self, user_id: &str) -> Vec<Product> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_products(user_id).await {
-        Ok(products) => return products,
+        Ok(products) => products,
         Err(e) => {
           println!(
             "Error getting products for user w/ ID: {}. Returning empty Vec. Error {:?}",
@@ -81,22 +84,25 @@ impl ConnectionManager {
   pub async fn get_feature_flag(&self, product_id: &str, flag_name: &str) -> Option<FeatureFlag> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_feature_flag(product_id, flag_name).await {
-        Ok(feature_flag) => return feature_flag,
+        Ok(feature_flag) => feature_flag,
         Err(e) => {
           println!(
             "Error getting feature '{}'. Returning Option::None. Error: {:?}",
             flag_name, e
           );
-          return None;
+          None
         }
       },
     }
   }
 
+  /// Given a product_id returns a list of Feature Flags belonging to the product_id
+  ///
+  /// Returns an empty `Vec<FeatureFlag>` if no flags are found
   pub async fn get_feature_flags(&self, product_id: &str) -> Vec<FeatureFlag> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_feature_flags(product_id).await {
-        Ok(feature_flags) => return feature_flags,
+        Ok(feature_flags) => feature_flags,
         Err(e) => {
           println!(
             "Error getting features for product_id '{}'. Returning empty Vec. Error: {:?}",
@@ -108,6 +114,10 @@ impl ConnectionManager {
     }
   }
 
+  /// given a unique feature flag ID and a fully constructed FeatureFlag struct, will update said
+  /// flag in the database
+  ///
+  /// returns `bool` to indicate success
   pub async fn update_feature_flag(&self, feature_flag_id: &str, updated: FeatureFlag) -> bool {
     match &self.connection_type {
       ConnectionType::MongoDB => {
@@ -117,12 +127,12 @@ impl ConnectionManager {
         };
 
         match mongo::update_feature_flag(id, updated).await {
-          Ok(_) => return true,
+          Ok(_) => true,
           Err(e) => {
             println!("Error updating feature flag. Error: {:?}", e);
-            return false
+            false
           },
-        };
+        }
       }
     }
   }
@@ -138,7 +148,7 @@ impl ConnectionManager {
 
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_user(user_email, user_id).await {
-        Ok(user) => return user,
+        Ok(user) => user,
         Err(e) => {
           println!(
             "Error getting user from email '{}' and/or id '{}'. Returning Option::None. Error: {:?}",
@@ -146,16 +156,17 @@ impl ConnectionManager {
             user_id.unwrap_or("[Not Provided]"),
             e
           );
-          return None;
+          None
         }
       },
     }
   }
 
+  /// Returns all users of a given acount type
   pub async fn get_users(&self, account_type: Option<AccountType>) -> Vec<User> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_users(account_type).await {
-        Ok(users) => return users,
+        Ok(users) => users,
         Err(e) => {
           println!("Error getting users. Returning empty list: Error: {:?}", e);
           return vec!()
@@ -164,25 +175,35 @@ impl ConnectionManager {
     }
   }
 
+  /// creates a product given a partially compleate `ProductBuilder`
+  ///
+  /// This expects that the only missing element in the `ProductBuilder` is the `oid`
+  ///
+  /// Returns fully constructed product inside an `Option`
   pub async fn create_product(&self, product_builder: ProductBuilder) -> Option<Product> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::create_product(product_builder).await {
-        Ok(value) => return Some(value),
+        Ok(value) => Some(value),
         Err(e) => {
           println!("Error creating product. Returning Option::None. Error {:?}", e);
-          return None;
+          None
         }
       },
     }
   }
 
+  /// Creates a feature flag given a partially constructed `FeatureFlagBuilder`
+  ///
+  /// This expects that the only missing element in the `FeatureFlagBuilder` is the `oid`
+  ///
+  /// Returns a fully constructed product inside of an `Option`
   pub async fn create_flag(&self, flag_builder: FeatureFlagBuilder) -> Option<FeatureFlag> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::create_flag(flag_builder).await {
-        Ok(value) => return Some(value),
+        Ok(value) => Some(value),
         Err(e) => {
           println!("Error creating flag. Returning Option::None. Error {:?}", e);
-          return None;
+          None
         }
       },
     }
@@ -190,14 +211,14 @@ impl ConnectionManager {
 
   /// Creates a user from a given `UserBuilder`
   ///
-  /// It's expected that all values besides `UserBuilder.id` are set. `UserBuilder.id` will be set by the database
+  /// It's expected that all values besides `UserBuilder.oid` are set. `UserBuilder.oid` will be set by the database
   pub async fn create_user(&self, user_builder: UserBuilder) -> Option<User> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::create_user(user_builder).await {
-        Ok(value) => return Some(value),
+        Ok(value) => Some(value),
         Err(e) => {
           println!("Error creating user. Returning Option::None. Error {:?}", e);
-          return None;
+          None
         }
       },
     }
