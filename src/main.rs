@@ -443,6 +443,31 @@ async fn login(
   Err(status::BadRequest(Some("Incorrect password".to_string())))
 }
 
+#[openapi(tag = "Users")]
+#[post("/logout")]
+async fn logout(auth_tokens_mut: &State<Arc<Mutex<AuthTokens>>>, jar: &CookieJar<'_>,) -> Result<status::Accepted<()>, status::BadRequest<String>> {
+    // Get user ID from request cookies
+    let user_id = match jar.get_private(USER_ID) {
+        Some(user_id) => user_id.value().to_string(),
+        None => return Err(status::BadRequest(Some("Not logged in".to_string()))),
+    };
+    
+    // Remove login cookies
+    jar.remove_private(Cookie::named(USER_ID));
+    jar.remove_private(Cookie::named(AUTH_TOKEN));
+
+    let mut auth_tokens = match auth_tokens_mut.lock() {
+        Ok(auth_tokens) => auth_tokens,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
+    if auth_tokens.remove_token(&user_id) {
+        return Ok(status::Accepted(None))
+    } else {
+        return Err(status::BadRequest(Some("Not logged into server".to_string())))
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
   rocket::build()
@@ -464,7 +489,8 @@ fn rocket() -> _ {
         create_product,
         create_flag,
         create_user,
-        login
+        login,
+        logout,
       ],
     )
     .mount(

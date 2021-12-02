@@ -125,6 +125,16 @@ impl AuthTokens {
     token.to_string()
   }
 
+  /// Removes a user token.
+  ///
+  /// Returns `false` if the the user was not found
+  pub fn remove_token(&mut self, user_id: &str) -> bool {
+      match self.user_tokens.remove(user_id) {
+          Some(_) => true,
+          None => false,
+      }
+  }
+
   /// Checks if a token is authenticated under a specific user
   pub fn check_for(&self, user_id: &str, token: &str) -> bool {
     match self.user_tokens.get(user_id) {
