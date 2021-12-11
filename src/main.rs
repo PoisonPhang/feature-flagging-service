@@ -416,7 +416,7 @@ async fn login(
   database_connection: &State<ConnectionManager>,
   auth_tokens_mut: &State<Arc<Mutex<AuthTokens>>>,
   jar: &CookieJar<'_>,
-) -> Result<status::Accepted<()>, status::BadRequest<String>> {
+) -> Result<status::Accepted<Json<SpecSafeUser>>, status::BadRequest<String>> {
   let user = match database_connection.get_user(Some(email), None).await {
     Some(value) => value,
     None => return Err(status::BadRequest(Some(format!("User {} not found", email)))),
@@ -437,7 +437,9 @@ async fn login(
     jar.add_private(Cookie::new(USER_ID, user_id.to_hex()));
     jar.add_private(Cookie::new(AUTH_TOKEN, auth_tokens.add_token(&user_id.to_hex())));
 
-    return Ok(status::Accepted(None));
+
+
+    return Ok(status::Accepted(Some(Json(user.get_spec_safe_user()))));
   }
 
   Err(status::BadRequest(Some("Incorrect password".to_string())))
