@@ -83,7 +83,7 @@ pub async fn get_feature_flags(product_id: &str) -> error::Result<Vec<FeatureFla
   let db = client.database("data");
   let features_collection = db.collection::<FeatureFlag>("features");
 
-  let filter = doc! {"product": product_id};
+  let filter = doc! {"product_id": product_id};
 
   let mut cursor = features_collection.find(filter, None).await?;
 
