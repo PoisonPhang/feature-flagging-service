@@ -63,15 +63,13 @@ impl ConnectionManager {
   /// Given a user ID, returns a lit of products consumed by the user
   ///
   /// Will return an empty `Vec<Product>` if no results are found
-  pub async fn get_products(&self, user_id: &str) -> Vec<Product> {
+  pub async fn get_products(&self, user_id: Option<String>) -> Vec<Product> {
     match &self.connection_type {
       ConnectionType::MongoDB => match mongo::get_products(user_id).await {
         Ok(products) => products,
         Err(e) => {
           println!(
-            "Error getting products for user w/ ID: {}. Returning empty Vec. Error {:?}",
-            user_id, e
-          );
+            "Error getting products. Returning empty Vec. Error {:?}", e);
           return vec![];
         }
       },

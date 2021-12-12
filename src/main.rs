@@ -195,14 +195,17 @@ async fn get_products(user_email: &str, database_connection: &State<ConnectionMa
     None => return Json(vec![]),
   };
 
-  let user_id = match user.oid {
-    Some(oid) => oid,
-    None => return Json(vec![]),
+  let user_id = match user.account_type {
+    AccountType::Client => match user.oid {
+      Some(oid) => Some(oid.to_hex()),
+      None => return Json(vec![]),
+    },
+    AccountType::Developer => None,
   };
 
   Json(
     database_connection
-      .get_products(&user_id.to_hex())
+      .get_products(user_id)
       .await
       .iter()
       .map(|x| x.get_spec_safe_product())

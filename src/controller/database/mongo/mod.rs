@@ -33,14 +33,18 @@ pub async fn get_product(product_name: &str) -> error::Result<Option<Product>> {
 /// Gets a `Vec<Product>` given a user_id
 ///
 /// Returns all products consumed by the user
-pub async fn get_products(user_id: &str) -> error::Result<Vec<Product>> {
+pub async fn get_products(user_id: Option<String>) -> error::Result<Vec<Product>> {
   let client = get_client().await?;
   let mut products: Vec<Product> = vec![];
 
   let db = client.database("data");
   let product_collection = db.collection::<Product>("products");
 
-  let filter = doc! {"users": user_id};
+  let mut filter = doc!();
+
+  if let Some(user_id) = user_id {
+    filter.insert("users", user_id);
+  }
 
   let mut cursor = product_collection.find(filter, None).await?;
 
