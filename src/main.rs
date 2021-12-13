@@ -7,11 +7,13 @@ mod controller;
 mod model;
 
 use std::sync::{Arc, Mutex};
+use std::path::{Path, PathBuf};
 
 use rocket::http::{Cookie, CookieJar};
 use rocket::response::status;
 use rocket::serde::json::Json;
 use rocket::State;
+use rocket::fs::NamedFile;
 use rocket_okapi::swagger_ui::{self, SwaggerUIConfig};
 use rocket_okapi::{openapi, openapi_get_routes};
 
@@ -26,9 +28,9 @@ const USER_ID: &str = "user_id";
 const AUTH_TOKEN: &str = "auth_token";
 
 #[openapi(skip)]
-#[get("/")]
-async fn index() -> String {
-  "Not 404, we just don't have a page yet".to_string()
+#[get("/<file..>", rank = 10)]
+async fn index(file: PathBuf) -> Result<NamedFile, std::io::Error> {
+  NamedFile::open(Path::new("../hoist-the-colors/build").join(file)).await
 }
 
 /// Checks a product's flag to see if it is enabled
