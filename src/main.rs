@@ -130,15 +130,15 @@ async fn lower(
   feature: &str,
   user_email: &str,
   database_connection: &State<ConnectionManager>,
-) -> Result<status::Accepted<()>, status::BadRequest<()>> {
+) -> Result<status::Accepted<()>, status::BadRequest<String>> {
   let mut flag = match database_connection.get_feature_flag(product_id, feature).await {
     Some(flag) => flag,
-    None => return Err(status::BadRequest(None)),
+    None => return Err(status::BadRequest(Some(format!("Error. Unable to get flag: '{}'.", feature)))),
   };
 
   let flag_id = match flag.oid {
     Some(oid) => oid.to_hex(),
-    None => return Err(status::BadRequest(None)),
+    None => return Err(status::BadRequest(Some("Error. Bad object ID.".to_string()))),
   };
 
   let user_id: Option<String> = match database_connection.get_user(Some(user_email), None).await {
@@ -146,10 +146,10 @@ async fn lower(
       AccountType::Developer => None,
       AccountType::Client => match user.oid {
         Some(oid) => Some(oid.to_hex()),
-        None => return Err(status::BadRequest(None)),
+        None => return Err(status::BadRequest(Some("Error. Bad user object ID.".to_string()))),
       },
     },
-    None => return Err(status::BadRequest(None)),
+    None => return Err(status::BadRequest(Some(format!("Error. Unable to get user '{}'", user_email)))),
   };
 
   flag.lower(user_id);
