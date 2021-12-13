@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeatureFlag {
   /// Unique ID of the feature flag
-  #[serde(alias = "_id", skip_serializing_if = "Option::is_none")]
+  #[serde(alias = "_id", rename(serialize = "_id"), skip_serializing_if = "Option::is_none")]
   pub oid: Option<ObjectId>,
   /// Name of the feature flag
   pub name: String,
